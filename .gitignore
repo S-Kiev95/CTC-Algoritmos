@@ -39,3 +39,9 @@ yarn-error.log*
 # typescript
 *.tsbuildinfo
 next-env.d.ts
+
+# AI assistant config (local-only — instrucciones para Claude/Cursor/etc.)
+AGENTS.md
+CLAUDE.md
+.claude/
+.agents/

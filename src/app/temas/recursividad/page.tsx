@@ -3,6 +3,7 @@
 import { useMemo, useState } from "react";
 import { Minus, Plus, Repeat } from "lucide-react";
 import { AlgorithmPlayer } from "@/components/AlgorithmPlayer";
+import { ResizableTopicShell } from "@/components/ResizableTopicShell";
 import { CallStack } from "@/components/algorithms/CallStack";
 import {
   FACTORIAL_CODE,
@@ -70,9 +71,8 @@ export default function RecursividadPage() {
   // Key combinado: si cambia, el AlgorithmPlayer se remonta y el reproductor vuelve a 0.
   const playerKey = `${algoKey}-${n}`;
 
-  return (
-    <div className="flex h-full flex-col">
-      <header className="border-b border-zinc-200 bg-white px-6 py-4 dark:border-zinc-800 dark:bg-zinc-950">
+  const header = (
+    <header className="border-b border-zinc-200 bg-white px-6 py-4 dark:border-zinc-800 dark:bg-zinc-950">
         <div className="flex items-start gap-3">
           <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-lg bg-zinc-100 text-zinc-700 dark:bg-zinc-800 dark:text-zinc-300">
             <Repeat className="h-5 w-5" />
@@ -147,17 +147,18 @@ export default function RecursividadPage() {
             {steps.length} pasos
           </span>
         </div>
-      </header>
+    </header>
+  );
 
-      <div className="flex-1 min-h-0">
-        <AlgorithmPlayer<RecursionState>
-          key={playerKey}
-          code={algo.code}
-          steps={steps}
-          title={`${algo.label}(${n})`}
-          renderVisualization={(step) => <CallStack state={step.state} />}
-        />
-      </div>
-    </div>
+  return (
+    <ResizableTopicShell header={header}>
+      <AlgorithmPlayer<RecursionState>
+        key={playerKey}
+        code={algo.code}
+        steps={steps}
+        title={`${algo.label}(${n})`}
+        renderVisualization={(step) => <CallStack state={step.state} />}
+      />
+    </ResizableTopicShell>
   );
 }

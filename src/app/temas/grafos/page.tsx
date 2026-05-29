@@ -10,6 +10,7 @@ import {
   Workflow,
 } from "lucide-react";
 import { AlgorithmPlayer } from "@/components/AlgorithmPlayer";
+import { ResizableTopicShell } from "@/components/ResizableTopicShell";
 import { AdjacencyMatrix } from "@/components/algorithms/AdjacencyMatrix";
 import { Graph } from "@/components/algorithms/Graph";
 import { A_STAR_CODE, generateAStarSteps } from "@/lib/algorithms/graph/aStar";
@@ -51,9 +52,8 @@ export default function GrafosPage() {
   const [aStarStart, setAStarStart] = useState("0,0");
   const [aStarEnd, setAStarEnd] = useState("4,4");
 
-  return (
-    <div className="flex h-full flex-col">
-      <header className="border-b border-zinc-200 bg-white px-6 py-4 dark:border-zinc-800 dark:bg-zinc-950">
+  const header = (
+    <header className="border-b border-zinc-200 bg-white px-6 py-4 dark:border-zinc-800 dark:bg-zinc-950">
         <div className="flex items-start gap-3">
           <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-lg bg-zinc-100 text-zinc-700 dark:bg-zinc-800 dark:text-zinc-300">
             <Workflow className="h-5 w-5" />
@@ -190,28 +190,29 @@ export default function GrafosPage() {
             </label>
           )}
         </div>
-      </header>
+    </header>
+  );
 
-      <div className="min-h-0 flex-1">
-        {demo === "conceptos" && <ConceptosTab />}
-        {demo === "bfs" && <BfsDemo key={`b-${startId}`} startId={startId} />}
-        {demo === "dfs" && <DfsDemo key={`d-${startId}`} startId={startId} />}
-        {demo === "dijkstra" && (
-          <DijkstraDemo
-            key={`dj-${startId}-${endId}`}
-            startId={startId}
-            endId={endId}
-          />
-        )}
-        {demo === "astar" && (
-          <AStarDemo
-            key={`as-${aStarStart}-${aStarEnd}`}
-            startId={aStarStart}
-            endId={aStarEnd}
-          />
-        )}
-      </div>
-    </div>
+  return (
+    <ResizableTopicShell header={header}>
+      {demo === "conceptos" && <ConceptosTab />}
+      {demo === "bfs" && <BfsDemo key={`b-${startId}`} startId={startId} />}
+      {demo === "dfs" && <DfsDemo key={`d-${startId}`} startId={startId} />}
+      {demo === "dijkstra" && (
+        <DijkstraDemo
+          key={`dj-${startId}-${endId}`}
+          startId={startId}
+          endId={endId}
+        />
+      )}
+      {demo === "astar" && (
+        <AStarDemo
+          key={`as-${aStarStart}-${aStarEnd}`}
+          startId={aStarStart}
+          endId={aStarEnd}
+        />
+      )}
+    </ResizableTopicShell>
   );
 }
 

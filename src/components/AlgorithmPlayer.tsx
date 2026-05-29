@@ -1,9 +1,11 @@
 "use client";
 
-import { useEffect, useMemo, type ReactNode } from "react";
+import { useEffect, useMemo, useState, type ReactNode } from "react";
+import { Panel, PanelGroup } from "react-resizable-panels";
 import { useStepPlayer } from "@/hooks/useStepPlayer";
 import { CodePanel } from "./CodePanel";
 import { PlayerControls } from "./PlayerControls";
+import { ResizeHandle } from "./ResizeHandle";
 import { WatchPanel } from "./WatchPanel";
 import type { Step } from "@/lib/types";
 
@@ -27,8 +29,11 @@ type Props<TState> = {
 
 /**
  * Layout reutilizable para cualquier algoritmo. Solo necesitás darle
- * code + steps + cómo renderizar el estado. Opcionalmente podés cambiar
- * la disposición visual con `layout`.
+ * code + steps + cómo renderizar el estado.
+ *
+ * Los paneles son **redimensionables** arrastrando los divisores. El
+ * tamaño preferido se persiste en localStorage por cada disposición
+ * mediante `autoSaveId` de react-resizable-panels.
  */
 export function AlgorithmPlayer<TState>({
   code,
@@ -41,6 +46,7 @@ export function AlgorithmPlayer<TState>({
   const current = steps[player.index];
   const activeLine = current?.line ?? 0;
   const isStacked = layout === "stacked";
+  const isLarge = useIsLargeScreen();
 
   useEffect(() => {
     function onKey(e: KeyboardEvent) {
@@ -68,87 +74,114 @@ export function AlgorithmPlayer<TState>({
     [current, player.index, renderVisualization],
   );
 
-  const hasWatch = current?.watch && current.watch.length > 0;
+  const hasWatch = !!current?.watch && current.watch.length > 0;
+
+  // Dirección del split principal:
+  // - stacked: siempre vertical (vis arriba, código abajo)
+  // - side-by-side en pantalla grande: horizontal
+  // - side-by-side en pantalla chica: caemos a vertical para que no quede
+  //   apretado.
+  const mainDirection: "horizontal" | "vertical" =
+    isStacked || !isLarge ? "vertical" : "horizontal";
+
+  // En el contenedor de código, si hay watch:
+  // - stacked + pantalla grande: split horizontal (código | watch)
+  // - resto: split vertical (código encima de watch)
+  const codeDirection: "horizontal" | "vertical" =
+    isStacked && isLarge ? "horizontal" : "vertical";
+
+  const visualizationSection = (
+    <section className="flex h-full min-h-0 flex-col">
+      {title && (
+        <div className="border-b border-zinc-200 px-6 py-3 dark:border-zinc-800">
+          <h2 className="text-sm font-semibold text-zinc-900 dark:text-zinc-100">
+            {title}
+          </h2>
+          {current?.note && (
+            <p className="mt-1 text-xs text-zinc-600 dark:text-zinc-400">
+              {current.note}
+            </p>
+          )}
+        </div>
+      )}
+      <div
+        className={[
+          "flex min-h-0 flex-1",
+          // items-start evita que el hijo se estire a la altura del panel
+          // (default align-items: stretch). Sin esto, el contenido interno
+          // del hijo se corta y el scroll del padre nunca se activa.
+          isStacked
+            ? "items-start overflow-hidden p-3"
+            : "items-start justify-center overflow-auto p-6",
+        ].join(" ")}
+      >
+        {visualization ?? (
+          <p className="text-sm text-zinc-500">Sin pasos cargados.</p>
+        )}
+      </div>
+    </section>
+  );
+
+  const codeSection = (
+    <div className="flex h-full min-h-0 flex-col bg-zinc-950 text-zinc-100">
+      {hasWatch ? (
+        <PanelGroup
+          direction={codeDirection}
+          autoSaveId={`algoplayer-code-${codeDirection}`}
+          className="flex-1"
+        >
+          <Panel defaultSize={60} minSize={25} className="flex min-h-0 flex-col">
+            <CodePanel code={code} activeLine={activeLine} />
+          </Panel>
+          <ResizeHandle direction={codeDirection} variant="onCode" />
+          <Panel defaultSize={40} minSize={15} className="min-h-0 overflow-auto">
+            <WatchPanel entries={current!.watch!} />
+          </Panel>
+        </PanelGroup>
+      ) : (
+        <CodePanel code={code} activeLine={activeLine} />
+      )}
+    </div>
+  );
 
   return (
     <div className="grid h-full grid-rows-[1fr_auto]">
-      <div
-        className={
-          isStacked
-            ? "grid min-h-0 grid-rows-[1fr_minmax(220px,38%)]"
-            : "grid min-h-0 grid-cols-1 lg:grid-cols-[1fr_minmax(360px,42%)]"
-        }
+      <PanelGroup
+        direction={mainDirection}
+        autoSaveId={`algoplayer-main-${layout}-${mainDirection}`}
+        className="min-h-0"
       >
-        {/* Sección de visualización */}
-        <section
-          className={[
-            "flex min-h-0 flex-col",
-            isStacked
-              ? "border-b border-zinc-200 dark:border-zinc-800"
-              : "border-b border-zinc-200 lg:border-b-0 lg:border-r dark:border-zinc-800",
-          ].join(" ")}
+        <Panel
+          defaultSize={isStacked ? 62 : 58}
+          minSize={25}
+          className="min-h-0"
         >
-          {title && (
-            <div className="border-b border-zinc-200 px-6 py-3 dark:border-zinc-800">
-              <h2 className="text-sm font-semibold text-zinc-900 dark:text-zinc-100">
-                {title}
-              </h2>
-              {current?.note && (
-                <p className="mt-1 text-xs text-zinc-600 dark:text-zinc-400">
-                  {current.note}
-                </p>
-              )}
-            </div>
-          )}
-          <div
-            className={[
-              "flex min-h-0 flex-1",
-              isStacked
-                ? "overflow-hidden p-3"
-                : "justify-center overflow-auto p-6",
-            ].join(" ")}
-          >
-            {visualization ?? (
-              <p className="text-sm text-zinc-500">Sin pasos cargados.</p>
-            )}
-          </div>
-        </section>
-
-        {/* Sección de código + watch */}
-        <section
-          className={[
-            "min-h-0 bg-zinc-950 text-zinc-100",
-            isStacked && hasWatch
-              ? "grid grid-cols-1 lg:grid-cols-[1fr_minmax(260px,38%)]"
-              : "flex flex-col",
-          ].join(" ")}
-        >
-          <div
-            className={[
-              "flex min-h-0 flex-col",
-              !isStacked && "flex-1",
-            ]
-              .filter(Boolean)
-              .join(" ")}
-          >
-            <CodePanel code={code} activeLine={activeLine} />
-          </div>
-          {hasWatch && (
-            <div
-              className={[
-                "overflow-auto border-zinc-800",
-                isStacked
-                  ? "border-t lg:border-l lg:border-t-0"
-                  : "max-h-[40%] border-t",
-              ].join(" ")}
-            >
-              <WatchPanel entries={current!.watch!} />
-            </div>
-          )}
-        </section>
-      </div>
+          {visualizationSection}
+        </Panel>
+        <ResizeHandle direction={mainDirection} />
+        <Panel defaultSize={isStacked ? 38 : 42} minSize={20} className="min-h-0">
+          {codeSection}
+        </Panel>
+      </PanelGroup>
 
       <PlayerControls player={player} />
     </div>
   );
+}
+
+/**
+ * Hook para detectar pantalla ≥ lg (1024px). Sirve para decidir si el
+ * split principal va horizontal o vertical. Default `true` para que el
+ * HTML estático del export pre-renderice el caso desktop.
+ */
+function useIsLargeScreen(): boolean {
+  const [isLarge, setIsLarge] = useState(true);
+  useEffect(() => {
+    const mq = window.matchMedia("(min-width: 1024px)");
+    const update = () => setIsLarge(mq.matches);
+    update();
+    mq.addEventListener("change", update);
+    return () => mq.removeEventListener("change", update);
+  }, []);
+  return isLarge;
 }

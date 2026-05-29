@@ -3,6 +3,7 @@
 import { useMemo, useState } from "react";
 import { BookOpen, GitBranch, ListOrdered, Plus, Search } from "lucide-react";
 import { AlgorithmPlayer } from "@/components/AlgorithmPlayer";
+import { ResizableTopicShell } from "@/components/ResizableTopicShell";
 import { Teoria } from "@/components/Teoria";
 import { BSTView } from "@/components/algorithms/BSTView";
 import {
@@ -70,9 +71,8 @@ export default function ArbolesBinariosPage() {
   const [traversalOrder, setTraversalOrder] =
     useState<TraversalOrder>("inorder");
 
-  return (
-    <div className="flex h-full flex-col">
-      <header className="border-b border-zinc-200 bg-white px-6 py-4 dark:border-zinc-800 dark:bg-zinc-950">
+  const header = (
+    <header className="border-b border-zinc-200 bg-white px-6 py-4 dark:border-zinc-800 dark:bg-zinc-950">
         <div className="flex items-start gap-3">
           <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-lg bg-zinc-100 text-zinc-700 dark:bg-zinc-800 dark:text-zinc-300">
             <GitBranch className="h-5 w-5" />
@@ -178,19 +178,20 @@ export default function ArbolesBinariosPage() {
             </span>
           )}
         </div>
-      </header>
+    </header>
+  );
 
-      <div className="min-h-0 flex-1">
-        {demo === "teoria" && <BSTTeoria />}
-        {demo === "insert" && <InsertDemo />}
-        {demo === "search" && (
-          <SearchDemo key={`s-${searchTarget}`} target={searchTarget} />
-        )}
-        {demo === "traversal" && (
-          <TraversalDemo key={`t-${traversalOrder}`} order={traversalOrder} />
-        )}
-      </div>
-    </div>
+  return (
+    <ResizableTopicShell header={header}>
+      {demo === "teoria" && <BSTTeoria />}
+      {demo === "insert" && <InsertDemo />}
+      {demo === "search" && (
+        <SearchDemo key={`s-${searchTarget}`} target={searchTarget} />
+      )}
+      {demo === "traversal" && (
+        <TraversalDemo key={`t-${traversalOrder}`} order={traversalOrder} />
+      )}
+    </ResizableTopicShell>
   );
 }
 

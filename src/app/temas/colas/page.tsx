@@ -3,6 +3,7 @@
 import { useMemo, useState } from "react";
 import { BookOpen, Building2, Inbox } from "lucide-react";
 import { AlgorithmPlayer } from "@/components/AlgorithmPlayer";
+import { ResizableTopicShell } from "@/components/ResizableTopicShell";
 import { Teoria } from "@/components/Teoria";
 import { QueueView } from "@/components/algorithms/QueueView";
 import {
@@ -15,9 +16,8 @@ type DemoKey = "teoria" | "banco";
 export default function ColasPage() {
   const [demo, setDemo] = useState<DemoKey>("teoria");
 
-  return (
-    <div className="flex h-full flex-col">
-      <header className="border-b border-zinc-200 bg-white px-6 py-4 dark:border-zinc-800 dark:bg-zinc-950">
+  const header = (
+    <header className="border-b border-zinc-200 bg-white px-6 py-4 dark:border-zinc-800 dark:bg-zinc-950">
         <div className="flex items-start gap-3">
           <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-lg bg-zinc-100 text-zinc-700 dark:bg-zinc-800 dark:text-zinc-300">
             <Inbox className="h-5 w-5" />
@@ -55,12 +55,14 @@ export default function ColasPage() {
             </TabButton>
           </div>
         </div>
-      </header>
+    </header>
+  );
 
-      <div className="min-h-0 flex-1">
-        {demo === "banco" && <BancoDemo />}
-        {demo === "teoria" && (
-          <Teoria
+  return (
+    <ResizableTopicShell header={header}>
+      {demo === "banco" && <BancoDemo />}
+      {demo === "teoria" && (
+        <Teoria
           resumen={
             <>
               Como la fila del banco un viernes a fin de mes: el primero que
@@ -216,9 +218,8 @@ print(banco.desencolar())           # None
 `,
           }}
         />
-        )}
-      </div>
-    </div>
+      )}
+    </ResizableTopicShell>
   );
 }
 

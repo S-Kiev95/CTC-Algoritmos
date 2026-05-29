@@ -3,6 +3,7 @@
 import { useMemo, useState } from "react";
 import { BookOpen, Boxes, Grid3x3, Wheat } from "lucide-react";
 import { AlgorithmPlayer } from "@/components/AlgorithmPlayer";
+import { ResizableTopicShell } from "@/components/ResizableTopicShell";
 import { Teoria } from "@/components/Teoria";
 import { Array1D } from "@/components/algorithms/Array1D";
 import { Grid2D } from "@/components/algorithms/Grid2D";
@@ -35,16 +36,15 @@ export default function ArreglosPage() {
   const [target, setTarget] = useState<number>(9);
   const [boardSize, setBoardSize] = useState<number>(4);
 
-  return (
-    <div className="flex h-full flex-col">
-      <header className="border-b border-zinc-200 bg-white px-6 py-4 dark:border-zinc-800 dark:bg-zinc-950">
-        <div className="flex items-start gap-3">
-          <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-lg bg-zinc-100 text-zinc-700 dark:bg-zinc-800 dark:text-zinc-300">
-            <Boxes className="h-5 w-5" />
-          </div>
-          <div className="flex-1">
-            <p className="text-xs font-semibold uppercase tracking-wider text-zinc-500">
-              Tema
+  const header = (
+    <header className="border-b border-zinc-200 bg-white px-6 py-4 dark:border-zinc-800 dark:bg-zinc-950">
+      <div className="flex items-start gap-3">
+        <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-lg bg-zinc-100 text-zinc-700 dark:bg-zinc-800 dark:text-zinc-300">
+          <Boxes className="h-5 w-5" />
+        </div>
+        <div className="flex-1">
+          <p className="text-xs font-semibold uppercase tracking-wider text-zinc-500">
+            Tema
             </p>
             <h1 className="text-xl font-semibold tracking-tight text-zinc-900 dark:text-zinc-50">
               Arreglos
@@ -131,19 +131,20 @@ export default function ArreglosPage() {
         {demo === "ajedrez" && (
           <ChessStoryNote />
         )}
-      </header>
+    </header>
+  );
 
-      <div className="min-h-0 flex-1">
-        {demo === "teoria" && <ArreglosTeoria />}
-        {demo === "busqueda" && (
-          <BusquedaDemo key={`b-${target}`} target={target} />
-        )}
-        {demo === "recorrido2d" && <Recorrido2DDemo key="r2d" />}
-        {demo === "ajedrez" && (
-          <AjedrezDemo key={`a-${boardSize}`} size={boardSize} />
-        )}
-      </div>
-    </div>
+  return (
+    <ResizableTopicShell header={header}>
+      {demo === "teoria" && <ArreglosTeoria />}
+      {demo === "busqueda" && (
+        <BusquedaDemo key={`b-${target}`} target={target} />
+      )}
+      {demo === "recorrido2d" && <Recorrido2DDemo key="r2d" />}
+      {demo === "ajedrez" && (
+        <AjedrezDemo key={`a-${boardSize}`} size={boardSize} />
+      )}
+    </ResizableTopicShell>
   );
 }
 
