@@ -2,9 +2,17 @@
 
 import Link from "next/link";
 import { usePathname } from "next/navigation";
-import { Home, PanelLeftClose, PanelLeftOpen } from "lucide-react";
+import {
+  Eye,
+  EyeOff,
+  Home,
+  PanelLeftClose,
+  PanelLeftOpen,
+} from "lucide-react";
 import { useEffect, useState } from "react";
 import { TOPICS } from "@/lib/topics";
+import { useVisibility } from "./VisibilityProvider";
+import { AdminControls } from "./AdminControls";
 
 const STORAGE_KEY = "sidebar-collapsed";
 
@@ -12,11 +20,17 @@ const STORAGE_KEY = "sidebar-collapsed";
  * Sidebar con colapso persistente en localStorage. Cuando está colapsado
  * solo se ven los iconos — el resto del layout (main flex-1) se ensancha
  * automáticamente al cambiar la width del aside.
+ *
+ * La lista de temas se filtra según la visibilidad: los estudiantes solo ven
+ * los temas habilitados; el profesor (logueado) ve todos, con un toggle para
+ * mostrar/ocultar cada uno.
  */
 export function Sidebar() {
   const pathname = usePathname();
   const isHome = pathname === "/";
   const [collapsed, setCollapsed] = useState(false);
+
+  const { isAdmin, canSee, loading, toggleTopic, visibility } = useVisibility();
 
   // Cargar preferencia (efecto solo en cliente, evita mismatch de SSR)
   useEffect(() => {
@@ -31,6 +45,9 @@ export function Sidebar() {
       return next;
     });
   }
+
+  // El profesor ve todos; el estudiante solo los habilitados.
+  const visibleTopics = isAdmin ? TOPICS : TOPICS.filter((t) => canSee(t.slug));
 
   return (
     <aside
@@ -94,36 +111,70 @@ export function Sidebar() {
             <div className="my-3 border-t border-zinc-200 dark:border-zinc-800" />
           )}
 
+          {/* Estado de carga / vacío para estudiantes */}
+          {!isAdmin && loading && !collapsed && (
+            <p className="mt-2 px-3 text-xs text-zinc-400">Cargando temas…</p>
+          )}
+          {!isAdmin && !loading && visibleTopics.length === 0 && !collapsed && (
+            <p className="mt-2 px-3 text-xs text-zinc-400">
+              Todavía no hay temas habilitados.
+            </p>
+          )}
+
           <ul
-            className={[
-              "space-y-0.5",
-              collapsed ? "mt-0" : "mt-1.5",
-            ].join(" ")}
+            className={["space-y-0.5", collapsed ? "mt-0" : "mt-1.5"].join(" ")}
           >
-            {TOPICS.map((topic) => {
+            {visibleTopics.map((topic) => {
               const href = `/temas/${topic.slug}`;
               const active = pathname.startsWith(href);
               const Icon = topic.icon;
+              const isVisible = visibility[topic.slug] === true;
               return (
-                <li key={topic.slug}>
+                <li key={topic.slug} className="flex items-center gap-1">
                   <SidebarLink
                     href={href}
                     icon={<Icon className="h-4 w-4 shrink-0" />}
                     label={topic.title}
                     active={active}
                     collapsed={collapsed}
+                    // En modo profesor atenuamos los temas ocultos.
+                    dimmed={isAdmin && !isVisible}
+                    className="flex-1"
                   />
+                  {isAdmin && !collapsed && (
+                    <button
+                      onClick={() => void toggleTopic(topic.slug, !isVisible)}
+                      title={isVisible ? "Ocultar a estudiantes" : "Mostrar a estudiantes"}
+                      aria-label={isVisible ? "Ocultar tema" : "Mostrar tema"}
+                      className={[
+                        "flex h-8 w-8 shrink-0 items-center justify-center rounded-md transition-colors",
+                        isVisible
+                          ? "text-emerald-600 hover:bg-emerald-50 dark:hover:bg-emerald-950/40"
+                          : "text-zinc-400 hover:bg-zinc-100 dark:hover:bg-zinc-800",
+                      ].join(" ")}
+                    >
+                      {isVisible ? (
+                        <Eye className="h-4 w-4" />
+                      ) : (
+                        <EyeOff className="h-4 w-4" />
+                      )}
+                    </button>
+                  )}
                 </li>
               );
             })}
           </ul>
         </nav>
 
-        {!collapsed && (
-          <div className="border-t border-zinc-200 px-5 py-3 text-xs text-zinc-500 dark:border-zinc-800">
-            Próximo: animaciones por tema.
-          </div>
-        )}
+        {/* Pie: control de acceso de profesor */}
+        <div
+          className={[
+            "border-t border-zinc-200 dark:border-zinc-800",
+            collapsed ? "flex justify-center px-2 py-3" : "px-5 py-3",
+          ].join(" ")}
+        >
+          <AdminControls collapsed={collapsed} />
+        </div>
       </div>
     </aside>
   );
@@ -135,12 +186,16 @@ function SidebarLink({
   label,
   active,
   collapsed,
+  dimmed = false,
+  className = "",
 }: {
   href: string;
   icon: React.ReactNode;
   label: string;
   active: boolean;
   collapsed: boolean;
+  dimmed?: boolean;
+  className?: string;
 }) {
   const baseClasses = [
     "flex items-center rounded-md text-sm transition-colors",
@@ -148,6 +203,8 @@ function SidebarLink({
       ? "bg-zinc-100 font-medium text-zinc-900 dark:bg-zinc-800 dark:text-zinc-50"
       : "text-zinc-600 hover:bg-zinc-50 hover:text-zinc-900 dark:text-zinc-400 dark:hover:bg-zinc-900 dark:hover:text-zinc-100",
     collapsed ? "justify-center px-2 py-2" : "gap-2.5 px-3 py-2",
+    dimmed ? "opacity-40" : "",
+    className,
   ].join(" ");
 
   return (
