@@ -7,15 +7,18 @@ import {
   ChevronRight,
   Clock,
   Code2,
+  Dumbbell,
   Eye,
   EyeOff,
   Home,
   PanelLeftClose,
   PanelLeftOpen,
+  Route,
 } from "lucide-react";
 import { useEffect, useState } from "react";
 import { TOPICS } from "@/lib/topics";
 import { PYTHON_POINTS } from "@/lib/python/points";
+import { EXERCISES, EXERCISES_SECTION_SLUG } from "@/lib/ejercicios/exercises";
 import { useVisibility } from "./VisibilityProvider";
 import { AdminControls } from "./AdminControls";
 
@@ -107,8 +110,10 @@ export function Sidebar() {
             collapsed={collapsed}
           />
 
-          {/* Sección Python: grupo desplegable arriba de los temas. */}
+          {/* Secciones desplegables arriba de los temas. */}
           <PythonGroup collapsed={collapsed} />
+          <EjerciciosGroup collapsed={collapsed} />
+          <RecorridoLink collapsed={collapsed} />
 
           {!collapsed && (
             <p className="mt-5 px-3 text-xs font-semibold uppercase tracking-wider text-zinc-500">
@@ -357,6 +362,235 @@ function PythonGroup({ collapsed }: { collapsed: boolean }) {
             );
           })}
         </ul>
+      )}
+    </div>
+  );
+}
+
+const EJ_GROUP_KEY = "ejercicios-group-open";
+
+/**
+ * Grupo "Ejercicios prácticos" en el sidebar. Visibilidad en 3 niveles: la
+ * sección (slug `ejercicios`), cada ejercicio (slug `ej:<x>`) y —dentro de la
+ * página— la solución. Acá manejamos los dos primeros: el grupo y el toggle 👁
+ * por ejercicio (solo profe).
+ */
+function EjerciciosGroup({ collapsed }: { collapsed: boolean }) {
+  const pathname = usePathname();
+  const { isAdmin, canSee, visibility, toggleTopic } = useVisibility();
+  const [open, setOpen] = useState(true);
+
+  useEffect(() => {
+    const saved = localStorage.getItem(EJ_GROUP_KEY);
+    if (saved === "false") setOpen(false);
+  }, []);
+
+  if (!isAdmin && !canSee(EXERCISES_SECTION_SLUG)) return null;
+
+  const sectionActive = pathname.startsWith("/ejercicios");
+  const sectionVisible = visibility[EXERCISES_SECTION_SLUG] === true;
+  const dimmed = isAdmin && !sectionVisible;
+
+  const items = isAdmin
+    ? EXERCISES
+    : EXERCISES.filter((e) => canSee(e.visibilitySlug));
+
+  if (collapsed) {
+    return (
+      <div className="mt-1">
+        <Link
+          href="/ejercicios"
+          title="Ejercicios prácticos"
+          className={[
+            "flex h-9 w-full items-center justify-center rounded-md transition-colors",
+            sectionActive
+              ? "bg-zinc-100 text-zinc-900 dark:bg-zinc-800 dark:text-zinc-50"
+              : "text-zinc-600 hover:bg-zinc-50 hover:text-zinc-900 dark:text-zinc-400 dark:hover:bg-zinc-900",
+            dimmed ? "opacity-40" : "",
+          ].join(" ")}
+        >
+          <Dumbbell className="h-4 w-4" />
+        </Link>
+      </div>
+    );
+  }
+
+  function toggleOpen() {
+    setOpen((o) => {
+      localStorage.setItem(EJ_GROUP_KEY, String(!o));
+      return !o;
+    });
+  }
+
+  return (
+    <div className={["mt-1", dimmed ? "opacity-50" : ""].join(" ")}>
+      <div className="flex items-center gap-1">
+        <button
+          onClick={toggleOpen}
+          aria-expanded={open}
+          className={[
+            "flex flex-1 items-center gap-2 rounded-md px-3 py-2 text-sm font-medium transition-colors",
+            sectionActive
+              ? "text-zinc-900 dark:text-zinc-50"
+              : "text-zinc-700 hover:bg-zinc-50 hover:text-zinc-900 dark:text-zinc-300 dark:hover:bg-zinc-900",
+          ].join(" ")}
+        >
+          <Dumbbell className="h-4 w-4 shrink-0" />
+          <span className="flex-1 text-left">Ejercicios</span>
+          {open ? (
+            <ChevronDown className="h-4 w-4 text-zinc-400" />
+          ) : (
+            <ChevronRight className="h-4 w-4 text-zinc-400" />
+          )}
+        </button>
+        {isAdmin && (
+          <button
+            onClick={() => void toggleTopic(EXERCISES_SECTION_SLUG, !sectionVisible)}
+            title={sectionVisible ? "Ocultar a estudiantes" : "Mostrar a estudiantes"}
+            aria-label={sectionVisible ? "Ocultar Ejercicios" : "Mostrar Ejercicios"}
+            className={[
+              "flex h-8 w-8 shrink-0 items-center justify-center rounded-md transition-colors",
+              sectionVisible
+                ? "text-emerald-600 hover:bg-emerald-50 dark:hover:bg-emerald-950/40"
+                : "text-zinc-400 hover:bg-zinc-100 dark:hover:bg-zinc-800",
+            ].join(" ")}
+          >
+            {sectionVisible ? (
+              <Eye className="h-4 w-4" />
+            ) : (
+              <EyeOff className="h-4 w-4" />
+            )}
+          </button>
+        )}
+      </div>
+
+      {open && (
+        <ul className="mt-0.5 space-y-0.5 border-l border-zinc-200 pl-3 dark:border-zinc-800">
+          {items.map((ex) => {
+            const href = `/ejercicios/${ex.slug}`;
+            const active = pathname.startsWith(href);
+            const Icon = ex.icon;
+            const itemVisible = visibility[ex.visibilitySlug] === true;
+
+            if (!ex.ready) {
+              return (
+                <li
+                  key={ex.slug}
+                  title="Próximamente"
+                  className="flex cursor-not-allowed items-center gap-2.5 rounded-md px-3 py-2 text-sm text-zinc-400 dark:text-zinc-600"
+                >
+                  <Icon className="h-4 w-4 shrink-0" />
+                  <span className="flex-1 truncate">{ex.title}</span>
+                  <Clock className="h-3.5 w-3.5 shrink-0" />
+                </li>
+              );
+            }
+
+            return (
+              <li key={ex.slug} className="flex items-center gap-1">
+                <Link
+                  href={href}
+                  className={[
+                    "flex flex-1 items-center gap-2.5 rounded-md px-3 py-2 text-sm transition-colors",
+                    active
+                      ? "bg-zinc-100 font-medium text-zinc-900 dark:bg-zinc-800 dark:text-zinc-50"
+                      : "text-zinc-600 hover:bg-zinc-50 hover:text-zinc-900 dark:text-zinc-400 dark:hover:bg-zinc-900 dark:hover:text-zinc-100",
+                    isAdmin && !itemVisible ? "opacity-40" : "",
+                  ].join(" ")}
+                >
+                  <Icon className="h-4 w-4 shrink-0" />
+                  <span className="truncate">{ex.title}</span>
+                </Link>
+                {isAdmin && (
+                  <button
+                    onClick={() => void toggleTopic(ex.visibilitySlug, !itemVisible)}
+                    title={itemVisible ? "Ocultar ejercicio" : "Mostrar ejercicio"}
+                    aria-label={itemVisible ? "Ocultar ejercicio" : "Mostrar ejercicio"}
+                    className={[
+                      "flex h-8 w-8 shrink-0 items-center justify-center rounded-md transition-colors",
+                      itemVisible
+                        ? "text-emerald-600 hover:bg-emerald-50 dark:hover:bg-emerald-950/40"
+                        : "text-zinc-400 hover:bg-zinc-100 dark:hover:bg-zinc-800",
+                    ].join(" ")}
+                  >
+                    {itemVisible ? (
+                      <Eye className="h-4 w-4" />
+                    ) : (
+                      <EyeOff className="h-4 w-4" />
+                    )}
+                  </button>
+                )}
+              </li>
+            );
+          })}
+        </ul>
+      )}
+    </div>
+  );
+}
+
+/**
+ * Link simple "Recorrer laberinto" (una sola página con pestañas, sin acordeón).
+ * Gateado por el slug `recorrido`; el profe lo ve siempre con un toggle 👁.
+ */
+function RecorridoLink({ collapsed }: { collapsed: boolean }) {
+  const pathname = usePathname();
+  const { isAdmin, canSee, visibility, toggleTopic } = useVisibility();
+
+  if (!isAdmin && !canSee("recorrido")) return null;
+
+  const active = pathname.startsWith("/recorrido");
+  const isVisible = visibility["recorrido"] === true;
+  const dimmed = isAdmin && !isVisible;
+
+  if (collapsed) {
+    return (
+      <div className="mt-1">
+        <Link
+          href="/recorrido"
+          title="Recorrer laberinto"
+          className={[
+            "flex h-9 w-full items-center justify-center rounded-md transition-colors",
+            active
+              ? "bg-zinc-100 text-zinc-900 dark:bg-zinc-800 dark:text-zinc-50"
+              : "text-zinc-600 hover:bg-zinc-50 hover:text-zinc-900 dark:text-zinc-400 dark:hover:bg-zinc-900",
+            dimmed ? "opacity-40" : "",
+          ].join(" ")}
+        >
+          <Route className="h-4 w-4" />
+        </Link>
+      </div>
+    );
+  }
+
+  return (
+    <div className={["mt-1 flex items-center gap-1", dimmed ? "opacity-50" : ""].join(" ")}>
+      <Link
+        href="/recorrido"
+        className={[
+          "flex flex-1 items-center gap-2 rounded-md px-3 py-2 text-sm font-medium transition-colors",
+          active
+            ? "bg-zinc-100 text-zinc-900 dark:bg-zinc-800 dark:text-zinc-50"
+            : "text-zinc-700 hover:bg-zinc-50 hover:text-zinc-900 dark:text-zinc-300 dark:hover:bg-zinc-900",
+        ].join(" ")}
+      >
+        <Route className="h-4 w-4 shrink-0" />
+        <span className="flex-1">Recorrer laberinto</span>
+      </Link>
+      {isAdmin && (
+        <button
+          onClick={() => void toggleTopic("recorrido", !isVisible)}
+          title={isVisible ? "Ocultar a estudiantes" : "Mostrar a estudiantes"}
+          aria-label={isVisible ? "Ocultar recorrido" : "Mostrar recorrido"}
+          className={[
+            "flex h-8 w-8 shrink-0 items-center justify-center rounded-md transition-colors",
+            isVisible
+              ? "text-emerald-600 hover:bg-emerald-50 dark:hover:bg-emerald-950/40"
+              : "text-zinc-400 hover:bg-zinc-100 dark:hover:bg-zinc-800",
+          ].join(" ")}
+        >
+          {isVisible ? <Eye className="h-4 w-4" /> : <EyeOff className="h-4 w-4" />}
+        </button>
       )}
     </div>
   );

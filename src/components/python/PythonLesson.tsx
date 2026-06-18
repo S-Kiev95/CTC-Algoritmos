@@ -26,12 +26,18 @@ export function PythonLesson({
   subtitle,
   teoria,
   demos,
+  kicker = "Python · Fundamentos",
+  teoriaLabel = "Teoría",
 }: {
   icon: ReactNode;
   title: ReactNode;
   subtitle: ReactNode;
   teoria: TeoriaProps;
   demos: LessonDemo[];
+  /** Texto chico arriba del título. */
+  kicker?: string;
+  /** Etiqueta de la primera pestaña (lectura). */
+  teoriaLabel?: string;
 }) {
   const [active, setActive] = useState<string>("teoria");
 
@@ -43,7 +49,7 @@ export function PythonLesson({
         </div>
         <div className="flex-1">
           <p className="text-xs font-semibold uppercase tracking-wider text-zinc-500">
-            Python · Fundamentos
+            {kicker}
           </p>
           <h1 className="text-xl font-semibold tracking-tight text-zinc-900 dark:text-zinc-50">
             {title}
@@ -61,7 +67,7 @@ export function PythonLesson({
             onClick={() => setActive("teoria")}
             icon={<BookOpen className="h-3.5 w-3.5" />}
           >
-            Teoría
+            {teoriaLabel}
           </TabButton>
           {demos.map((demo) => (
             <TabButton
