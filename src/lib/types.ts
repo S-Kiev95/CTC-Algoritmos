@@ -27,6 +27,8 @@ export type Step<TState> = {
   note?: string;
   /** Variables en scope en este instante. Si está vacío/undefined no se muestra panel. */
   watch?: WatchEntry[];
+  /** Sonido a reproducir al llegar a este paso (opcional; default un "tick"). */
+  sound?: "tick" | "place" | "pop" | "carve" | "found" | "error";
 };
 
 export type Algorithm<TState> = {

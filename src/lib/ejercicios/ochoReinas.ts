@@ -88,6 +88,7 @@ export function generateOchoReinasSteps(n = 8): Step<QueensState>[] {
       steps.push({
         state: snap({ trying: { col, row }, conflict, attackers }),
         line: 17,
+        sound: conflict ? "error" : "tick",
         note: conflict
           ? `Columna ${col}, fila ${row}: choca con una reina ya puesta (misma fila o diagonal). Se descarta.`
           : `Columna ${col}, fila ${row}: probar si es seguro.`,
@@ -97,6 +98,7 @@ export function generateOchoReinasSteps(n = 8): Step<QueensState>[] {
         steps.push({
           state: snap({ trying: null }),
           line: 18,
+          sound: "place",
           note: `Sin conflicto: se coloca la reina en columna ${col}, fila ${row}, y se pasa a la columna ${col + 1}.`,
         });
         if (place(col + 1)) return true;
@@ -104,6 +106,7 @@ export function generateOchoReinasSteps(n = 8): Step<QueensState>[] {
         steps.push({
           state: snap(),
           line: 21,
+          sound: "pop",
           note: `Esa rama no llevó a solución: se quita la reina de la columna ${col} (backtracking) y se prueba la próxima fila.`,
         });
       }

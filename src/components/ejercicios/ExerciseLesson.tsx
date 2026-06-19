@@ -6,13 +6,19 @@ import { ResizableTopicShell } from "@/components/ResizableTopicShell";
 import { useVisibility } from "@/components/VisibilityProvider";
 import type { Exercise } from "@/lib/ejercicios/exercises";
 
-type TabId = "enunciado" | "pistas" | "solucion" | "animacion";
+/** Pestaña extra (siempre visible) que va ANTES de Enunciado, ej. Teoría/Demo. */
+export type LeadingTab = {
+  id: string;
+  label: string;
+  icon: ReactNode;
+  render: () => ReactNode;
+};
 
 /**
- * Shell de una página de ejercicio. Tabs: Enunciado, Pistas, Solución y
- * (opcional) Animación. Las dos últimas solo se muestran si la solución está
- * habilitada (`canSee(exercise.solutionSlug)`); el profe/admin las ve siempre,
- * más un toggle para revelarlas a los estudiantes.
+ * Shell de una página de ejercicio. Tabs (opcionales) iniciales + Enunciado,
+ * Pistas, Solución y (opcional) Animación. Solución y Animación solo se muestran
+ * si la solución está habilitada (`canSee(exercise.solutionSlug)`); el
+ * profe/admin las ve siempre, más un toggle para revelarlas a los estudiantes.
  */
 export function ExerciseLesson({
   exercise,
@@ -21,6 +27,7 @@ export function ExerciseLesson({
   pistas,
   solucion,
   animacion,
+  leadingTabs = [],
 }: {
   exercise: Exercise;
   subtitle: ReactNode;
@@ -28,9 +35,10 @@ export function ExerciseLesson({
   pistas: ReactNode[];
   solucion: ReactNode;
   animacion?: () => ReactNode;
+  leadingTabs?: LeadingTab[];
 }) {
   const { isAdmin, canSee, visibility, toggleTopic } = useVisibility();
-  const [tab, setTab] = useState<TabId>("enunciado");
+  const [tab, setTab] = useState<string>(leadingTabs[0]?.id ?? "enunciado");
 
   const Icon = exercise.icon;
   // ExerciseLesson se usa para ejercicios "problema" (con solución). Si faltara
@@ -80,6 +88,16 @@ export function ExerciseLesson({
 
       <div className="mt-4 flex flex-wrap items-center gap-3">
         <div className="inline-flex flex-wrap rounded-lg border border-zinc-200 bg-zinc-50 p-0.5 dark:border-zinc-800 dark:bg-zinc-900">
+          {leadingTabs.map((lt) => (
+            <TabButton
+              key={lt.id}
+              active={tab === lt.id}
+              onClick={() => setTab(lt.id)}
+              icon={lt.icon}
+            >
+              {lt.label}
+            </TabButton>
+          ))}
           <TabButton active={tab === "enunciado"} onClick={() => setTab("enunciado")} icon={<BookText className="h-3.5 w-3.5" />}>
             Enunciado
           </TabButton>
@@ -103,13 +121,16 @@ export function ExerciseLesson({
 
   // Si la solución está oculta y el usuario cae en una tab de solución, lo
   // mandamos al enunciado.
-  const effectiveTab: TabId =
+  const effectiveTab =
     !showSolution && (tab === "solucion" || tab === "animacion")
       ? "enunciado"
       : tab;
 
+  const activeLeading = leadingTabs.find((lt) => lt.id === effectiveTab);
+
   return (
     <ResizableTopicShell header={header}>
+      {activeLeading && activeLeading.render()}
       {effectiveTab === "enunciado" && <ReadingPane>{enunciado}</ReadingPane>}
       {effectiveTab === "pistas" && <PistasPane pistas={pistas} />}
       {effectiveTab === "solucion" && showSolution && (
@@ -120,7 +141,7 @@ export function ExerciseLesson({
   );
 }
 
-function ReadingPane({ children }: { children: ReactNode }) {
+export function ReadingPane({ children }: { children: ReactNode }) {
   return (
     <div className="h-full overflow-auto">
       <div className="mx-auto max-w-3xl px-6 py-8 text-sm leading-relaxed text-zinc-700 dark:text-zinc-300 [&_code]:rounded [&_code]:bg-zinc-200/60 [&_code]:px-1 [&_code]:py-0.5 [&_code]:font-mono [&_code]:text-[12px] [&_code]:text-zinc-800 dark:[&_code]:bg-zinc-800 dark:[&_code]:text-zinc-200 [&_h2]:mb-2 [&_h2]:mt-6 [&_h2]:text-base [&_h2]:font-semibold [&_h2]:text-zinc-900 dark:[&_h2]:text-zinc-50 [&_p]:mb-3 [&_strong]:text-zinc-900 dark:[&_strong]:text-zinc-50">

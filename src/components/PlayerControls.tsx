@@ -1,7 +1,16 @@
 "use client";
 
-import { Play, Pause, SkipBack, SkipForward, RotateCcw } from "lucide-react";
+import {
+  Play,
+  Pause,
+  SkipBack,
+  SkipForward,
+  RotateCcw,
+  Volume2,
+  VolumeX,
+} from "lucide-react";
 import type { PlayerSpeed, StepPlayer } from "@/hooks/useStepPlayer";
+import { useSoundEnabled } from "@/lib/sound";
 
 const SPEEDS: PlayerSpeed[] = [0.5, 1, 1.5, 2, 4];
 
@@ -24,6 +33,8 @@ export function PlayerControls({ player }: Props) {
     isFirst,
     isLast,
   } = player;
+
+  const [soundOn, setSoundOn] = useSoundEnabled();
 
   return (
     <div className="flex flex-col gap-3 border-t border-zinc-200 bg-white px-4 py-3 dark:border-zinc-800 dark:bg-zinc-950">
@@ -57,6 +68,16 @@ export function PlayerControls({ player }: Props) {
         </div>
 
         <div className="flex items-center gap-1.5">
+          <IconButton
+            onClick={() => setSoundOn(!soundOn)}
+            title={soundOn ? "Silenciar" : "Activar sonido"}
+          >
+            {soundOn ? (
+              <Volume2 className="h-4 w-4" />
+            ) : (
+              <VolumeX className="h-4 w-4 text-zinc-400" />
+            )}
+          </IconButton>
           <span className="text-xs text-zinc-500">Velocidad</span>
           <select
             value={speed}

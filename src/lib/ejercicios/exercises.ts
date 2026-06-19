@@ -1,4 +1,4 @@
-import { Crown, Grid3x3, type LucideIcon } from "lucide-react";
+import { Crown, Grid3x3, Hexagon, type LucideIcon } from "lucide-react";
 
 /**
  * Metadata de los ejercicios prácticos.
@@ -46,6 +46,16 @@ export const EXERCISES: Exercise[] = [
     icon: Grid3x3,
     kind: "demo",
     visibilitySlug: "ej:laberinto-kruskal",
+    ready: true,
+  },
+  {
+    slug: "graham",
+    title: "Graham Scan",
+    short: "Convex hull: estimar el área afectada por una plaga",
+    icon: Hexagon,
+    kind: "problema",
+    visibilitySlug: "ej:graham",
+    solutionSlug: "ej:graham:sol",
     ready: true,
   },
 ];

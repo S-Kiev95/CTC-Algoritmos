@@ -1,8 +1,9 @@
 "use client";
 
-import { useEffect, useMemo, useState, type ReactNode } from "react";
+import { useEffect, useMemo, useRef, useState, type ReactNode } from "react";
 import { Panel, PanelGroup } from "react-resizable-panels";
 import { useStepPlayer } from "@/hooks/useStepPlayer";
+import { playSound } from "@/lib/sound";
 import { CodePanel } from "./CodePanel";
 import { PlayerControls } from "./PlayerControls";
 import { ResizeHandle } from "./ResizeHandle";
@@ -45,6 +46,19 @@ export function AlgorithmPlayer<TState>({
   const player = useStepPlayer(steps.length);
   const current = steps[player.index];
   const activeLine = current?.line ?? 0;
+
+  // Efectos de sonido: un sonido al avanzar a un paso nuevo (success al llegar
+  // al final). No suena al montar ni al retroceder/reiniciar.
+  const prevIndexRef = useRef(player.index);
+  useEffect(() => {
+    const i = player.index;
+    const prev = prevIndexRef.current;
+    if (i > prev) {
+      if (player.isLast) playSound("success");
+      else playSound(steps[i]?.sound ?? "tick");
+    }
+    prevIndexRef.current = i;
+  }, [player.index, player.isLast, steps]);
   const isStacked = layout === "stacked";
   const isLarge = useIsLargeScreen();
 

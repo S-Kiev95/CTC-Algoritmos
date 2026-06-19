@@ -150,6 +150,7 @@ export function generateMazeSteps(rows = 5, cols = 5): Step<MazeState>[] {
       steps.push({
         state: { rows, cols, comp: comp(), carved: [...carved], current: { a, b }, decision: "carve", groups: groups() },
         line: 16,
+        sound: "carve",
         note: "Grupos distintos: se unen y se abre el paso (se tira el muro).",
       });
     } else {
