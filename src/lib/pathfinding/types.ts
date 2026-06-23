@@ -20,6 +20,8 @@ export type PathState = {
   /** Nodos expandidos hasta ahora (para comparar algoritmos). */
   explored: number;
   found?: boolean;
-  /** Largo del camino final (en pasos). */
+  /** Largo del camino final (en pasos / celdas). */
   pathLen?: number;
+  /** Costo total del camino (suma de pesos de las cuadras). */
+  cost?: number;
 };

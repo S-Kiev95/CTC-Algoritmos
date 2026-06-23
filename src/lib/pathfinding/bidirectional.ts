@@ -1,5 +1,5 @@
 import type { Step } from "@/lib/types";
-import type { Maze } from "@/lib/ejercicios/mazeKruskal";
+import { edgeWeight, type Maze } from "@/lib/ejercicios/mazeKruskal";
 import type { CellMark, PathState } from "./types";
 
 export const BIDIRECTIONAL_CODE = `def bidireccional(adj, start, goal):
@@ -79,7 +79,7 @@ export function generateBidirectionalSteps(maze: Maze): Step<PathState>[] {
     explored++;
     for (const v of adj[u]) {
       if (visited.has(v)) continue;
-      const nd = best + 1;
+      const nd = best + edgeWeight(maze, u, v);
       if (nd < (dist.get(v) ?? Infinity)) {
         dist.set(v, nd);
         prev.set(v, u);
@@ -153,6 +153,8 @@ export function generateBidirectionalSteps(maze: Maze): Step<PathState>[] {
     path.push(...pathA, ...pathB.slice(1));
   }
 
+  const cost =
+    meet != null ? (distA.get(meet) ?? 0) + (distB.get(meet) ?? 0) : undefined;
   const pathSet = new Set<number>();
   path.forEach((cell, i) => {
     pathSet.add(cell);
@@ -161,11 +163,12 @@ export function generateBidirectionalSteps(maze: Maze): Step<PathState>[] {
         marks: buildMarks(null, meet, pathSet),
         found: i === path.length - 1,
         pathLen: path.length - 1,
+        cost,
       }),
       line: 9,
       note:
         i === path.length - 1
-          ? `Camino unido: ${path.length - 1} pasos. Al buscar desde los dos lados se exploran menos celdas.`
+          ? `Camino unido: costo ${cost} (${path.length - 1} cuadras). Al buscar desde los dos lados se exploran menos celdas.`
           : "Uniendo las dos mitades del camino…",
     });
   });

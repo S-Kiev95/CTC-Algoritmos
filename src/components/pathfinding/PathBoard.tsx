@@ -26,9 +26,16 @@ const MARK_BG: Record<CellMark, string> = {
  * celda según su estado en la búsqueda. Inicio y meta tienen icono propio.
  * Sirve para Dijkstra, bidireccional y A* (comparten PathState).
  */
-export function PathBoard({ state }: { state: PathState }) {
+export function PathBoard({
+  state,
+  weights,
+}: {
+  state: PathState;
+  /** Pesos por pasaje (clave `${min}-${max}`) para mostrar el costo de cada cuadra. */
+  weights?: Record<string, number>;
+}) {
   const reduced = useReducedMotion();
-  const { rows, cols, carved, start, goal, marks, explored, found, pathLen } =
+  const { rows, cols, carved, start, goal, marks, explored, found, pathLen, cost } =
     state;
   const carvedSet = new Set(carved.map(([a, b]) => wallKey(a, b)));
 
@@ -50,7 +57,7 @@ export function PathBoard({ state }: { state: PathState }) {
         </span>
         {found && pathLen != null && (
           <span className="rounded-md bg-yellow-100 px-2 py-0.5 text-xs font-medium text-yellow-800 dark:bg-yellow-950/60 dark:text-yellow-300">
-            Camino: {pathLen} pasos
+            {cost != null ? `Costo: ${cost} (${pathLen} cuadras)` : `Camino: ${pathLen} pasos`}
           </span>
         )}
       </div>
@@ -99,6 +106,17 @@ export function PathBoard({ state }: { state: PathState }) {
                   transition={reduced ? { duration: 0 } : transitions.snappy}
                   className="absolute inset-1 rounded-sm ring-2 ring-amber-500"
                 />
+              )}
+              {/* Costo de cada pasaje abierto */}
+              {weights && c < cols - 1 && !rightWall && (
+                <span className="absolute right-0 top-1/2 z-10 -translate-y-1/2 translate-x-1/2 rounded-sm bg-white px-px text-[8px] font-semibold leading-none text-zinc-500 dark:bg-zinc-900 dark:text-zinc-400">
+                  {weights[wallKey(i, i + 1)]}
+                </span>
+              )}
+              {weights && r < rows - 1 && !bottomWall && (
+                <span className="absolute bottom-0 left-1/2 z-10 -translate-x-1/2 translate-y-1/2 rounded-sm bg-white px-px text-[8px] font-semibold leading-none text-zinc-500 dark:bg-zinc-900 dark:text-zinc-400">
+                  {weights[wallKey(i, i + cols)]}
+                </span>
               )}
             </div>
           );

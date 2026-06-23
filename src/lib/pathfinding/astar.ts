@@ -1,5 +1,5 @@
 import type { Step } from "@/lib/types";
-import type { Maze } from "@/lib/ejercicios/mazeKruskal";
+import { edgeWeight, type Maze } from "@/lib/ejercicios/mazeKruskal";
 import type { CellMark, PathState } from "./types";
 
 export const ASTAR_CODE = `import heapq
@@ -11,8 +11,8 @@ def a_star(adj, start, goal):
         _, u = heapq.heappop(pq)  # mejor f = g + h
         if u == goal:
             break
-        for v in adj[u]:
-            ng = g[u] + 1
+        for (v, peso) in adj[u]:
+            ng = g[u] + peso
             if ng < g.get(v, INF):
                 g[v] = ng
                 prev[v] = u
@@ -96,7 +96,7 @@ export function generateAstarSteps(maze: Maze): Step<PathState>[] {
 
     for (const v of adj[u]) {
       if (visited.has(v)) continue;
-      const ng = (g.get(u) ?? Infinity) + 1;
+      const ng = (g.get(u) ?? Infinity) + edgeWeight(maze, u, v);
       if (ng < (g.get(v) ?? Infinity)) {
         g.set(v, ng);
         prev.set(v, u);
@@ -116,6 +116,7 @@ export function generateAstarSteps(maze: Maze): Step<PathState>[] {
     path.reverse();
   }
 
+  const cost = g.get(goal);
   const pathSet = new Set<number>();
   path.forEach((cell, i) => {
     pathSet.add(cell);
@@ -124,11 +125,12 @@ export function generateAstarSteps(maze: Maze): Step<PathState>[] {
         marks: buildMarks(null, pathSet),
         found: i === path.length - 1,
         pathLen: path.length - 1,
+        cost,
       }),
       line: 16,
       note:
         i === path.length - 1
-          ? `Camino encontrado: ${path.length - 1} pasos (explorando menos celdas).`
+          ? `Camino óptimo: costo ${cost} (${path.length - 1} cuadras), explorando menos celdas. Explorados: ${explored}.`
           : "Trazando el camino…",
     });
   });

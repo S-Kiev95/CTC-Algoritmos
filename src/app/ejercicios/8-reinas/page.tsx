@@ -1,14 +1,16 @@
 "use client";
 
-import { useMemo } from "react";
+import { useMemo, useState } from "react";
 import { AlgorithmPlayer } from "@/components/AlgorithmPlayer";
 import { ExerciseLesson } from "@/components/ejercicios/ExerciseLesson";
 import { QueensBoard } from "@/components/ejercicios/QueensBoard";
+import { QueensTreeView } from "@/components/ejercicios/QueensTreeView";
 import { getExercise } from "@/lib/ejercicios/exercises";
 import {
   OCHO_REINAS_CODE,
   generateOchoReinasSteps,
 } from "@/lib/ejercicios/ochoReinas";
+import { REINAS4_CODE, generateReinas4 } from "@/lib/ejercicios/reinas4";
 
 const exercise = getExercise("8-reinas")!;
 
@@ -127,13 +129,68 @@ function Solucion() {
 }
 
 function Animacion() {
+  const [sub, setSub] = useState<"r8" | "r4">("r8");
+  return (
+    <div className="flex h-full flex-col">
+      <div className="flex shrink-0 gap-1 border-b border-zinc-200 px-4 py-2 dark:border-zinc-800">
+        <SubTab active={sub === "r8"} onClick={() => setSub("r8")}>
+          Tablero 8×8
+        </SubTab>
+        <SubTab active={sub === "r4"} onClick={() => setSub("r4")}>
+          4×4 + árbol de decisión
+        </SubTab>
+      </div>
+      <div className="min-h-0 flex-1">{sub === "r8" ? <Demo8 /> : <Demo4 />}</div>
+    </div>
+  );
+}
+
+function Demo8() {
   const steps = useMemo(() => generateOchoReinasSteps(8), []);
   return (
     <AlgorithmPlayer
+      key="r8"
       code={OCHO_REINAS_CODE}
       steps={steps}
       title="Backtracking sobre el tablero 8×8 (hasta la primera solución)"
       renderVisualization={(step) => <QueensBoard state={step.state} />}
     />
+  );
+}
+
+function Demo4() {
+  const { steps, tree } = useMemo(() => generateReinas4(4), []);
+  return (
+    <AlgorithmPlayer
+      key="r4"
+      code={REINAS4_CODE}
+      steps={steps}
+      title="4 reinas: tablero (azul = se puede, rojo = atacada) + árbol de decisión"
+      renderVisualization={(step) => <QueensTreeView state={step.state} tree={tree} />}
+    />
+  );
+}
+
+function SubTab({
+  active,
+  onClick,
+  children,
+}: {
+  active: boolean;
+  onClick: () => void;
+  children: React.ReactNode;
+}) {
+  return (
+    <button
+      onClick={onClick}
+      className={[
+        "rounded-md px-3 py-1 text-xs font-medium transition-colors",
+        active
+          ? "bg-zinc-900 text-white dark:bg-zinc-100 dark:text-zinc-900"
+          : "text-zinc-600 hover:bg-zinc-100 dark:text-zinc-400 dark:hover:bg-zinc-800",
+      ].join(" ")}
+    >
+      {children}
+    </button>
   );
 }

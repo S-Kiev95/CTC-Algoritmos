@@ -11,6 +11,7 @@ import {
   Eye,
   EyeOff,
   Home,
+  Map as MapIcon,
   PanelLeftClose,
   PanelLeftOpen,
   Route,
@@ -19,6 +20,7 @@ import { useEffect, useState } from "react";
 import { TOPICS } from "@/lib/topics";
 import { PYTHON_POINTS } from "@/lib/python/points";
 import { EXERCISES, EXERCISES_SECTION_SLUG } from "@/lib/ejercicios/exercises";
+import { CITIES, MAPS_SECTION_SLUG } from "@/lib/mapas/cities";
 import { useVisibility } from "./VisibilityProvider";
 import { AdminControls } from "./AdminControls";
 
@@ -114,6 +116,7 @@ export function Sidebar() {
           <PythonGroup collapsed={collapsed} />
           <EjerciciosGroup collapsed={collapsed} />
           <RecorridoLink collapsed={collapsed} />
+          <MapasGroup collapsed={collapsed} />
 
           {!collapsed && (
             <p className="mt-5 px-3 text-xs font-semibold uppercase tracking-wider text-zinc-500">
@@ -591,6 +594,152 @@ function RecorridoLink({ collapsed }: { collapsed: boolean }) {
         >
           {isVisible ? <Eye className="h-4 w-4" /> : <EyeOff className="h-4 w-4" />}
         </button>
+      )}
+    </div>
+  );
+}
+
+const MAPS_GROUP_KEY = "mapas-group-open";
+
+/** Grupo "Mapas" en el sidebar: sección `mapas` + cada ciudad `mapa:<slug>`. */
+function MapasGroup({ collapsed }: { collapsed: boolean }) {
+  const pathname = usePathname();
+  const { isAdmin, canSee, visibility, toggleTopic } = useVisibility();
+  const [open, setOpen] = useState(true);
+
+  useEffect(() => {
+    const saved = localStorage.getItem(MAPS_GROUP_KEY);
+    if (saved === "false") setOpen(false);
+  }, []);
+
+  if (!isAdmin && !canSee(MAPS_SECTION_SLUG)) return null;
+
+  const sectionActive = pathname.startsWith("/mapas");
+  const sectionVisible = visibility[MAPS_SECTION_SLUG] === true;
+  const dimmed = isAdmin && !sectionVisible;
+  const items = isAdmin ? CITIES : CITIES.filter((c) => canSee(c.visibilitySlug));
+
+  if (collapsed) {
+    return (
+      <div className="mt-1">
+        <Link
+          href="/mapas"
+          title="Mapas"
+          className={[
+            "flex h-9 w-full items-center justify-center rounded-md transition-colors",
+            sectionActive
+              ? "bg-zinc-100 text-zinc-900 dark:bg-zinc-800 dark:text-zinc-50"
+              : "text-zinc-600 hover:bg-zinc-50 hover:text-zinc-900 dark:text-zinc-400 dark:hover:bg-zinc-900",
+            dimmed ? "opacity-40" : "",
+          ].join(" ")}
+        >
+          <MapIcon className="h-4 w-4" />
+        </Link>
+      </div>
+    );
+  }
+
+  function toggleOpen() {
+    setOpen((o) => {
+      localStorage.setItem(MAPS_GROUP_KEY, String(!o));
+      return !o;
+    });
+  }
+
+  return (
+    <div className={["mt-1", dimmed ? "opacity-50" : ""].join(" ")}>
+      <div className="flex items-center gap-1">
+        <button
+          onClick={toggleOpen}
+          aria-expanded={open}
+          className={[
+            "flex flex-1 items-center gap-2 rounded-md px-3 py-2 text-sm font-medium transition-colors",
+            sectionActive
+              ? "text-zinc-900 dark:text-zinc-50"
+              : "text-zinc-700 hover:bg-zinc-50 hover:text-zinc-900 dark:text-zinc-300 dark:hover:bg-zinc-900",
+          ].join(" ")}
+        >
+          <MapIcon className="h-4 w-4 shrink-0" />
+          <span className="flex-1 text-left">Mapas</span>
+          {open ? (
+            <ChevronDown className="h-4 w-4 text-zinc-400" />
+          ) : (
+            <ChevronRight className="h-4 w-4 text-zinc-400" />
+          )}
+        </button>
+        {isAdmin && (
+          <button
+            onClick={() => void toggleTopic(MAPS_SECTION_SLUG, !sectionVisible)}
+            title={sectionVisible ? "Ocultar a estudiantes" : "Mostrar a estudiantes"}
+            aria-label={sectionVisible ? "Ocultar Mapas" : "Mostrar Mapas"}
+            className={[
+              "flex h-8 w-8 shrink-0 items-center justify-center rounded-md transition-colors",
+              sectionVisible
+                ? "text-emerald-600 hover:bg-emerald-50 dark:hover:bg-emerald-950/40"
+                : "text-zinc-400 hover:bg-zinc-100 dark:hover:bg-zinc-800",
+            ].join(" ")}
+          >
+            {sectionVisible ? <Eye className="h-4 w-4" /> : <EyeOff className="h-4 w-4" />}
+          </button>
+        )}
+      </div>
+
+      {open && (
+        <ul className="mt-0.5 space-y-0.5 border-l border-zinc-200 pl-3 dark:border-zinc-800">
+          {items.map((c) => {
+            const href = `/mapas/${c.slug}`;
+            const active = pathname.startsWith(href);
+            const Icon = c.icon;
+            const itemVisible = visibility[c.visibilitySlug] === true;
+
+            if (!c.ready) {
+              return (
+                <li
+                  key={c.slug}
+                  title="Próximamente"
+                  className="flex cursor-not-allowed items-center gap-2.5 rounded-md px-3 py-2 text-sm text-zinc-400 dark:text-zinc-600"
+                >
+                  <Icon className="h-4 w-4 shrink-0" />
+                  <span className="flex-1 truncate">{c.title}</span>
+                  <Clock className="h-3.5 w-3.5 shrink-0" />
+                </li>
+              );
+            }
+
+            return (
+              <li key={c.slug} className="flex items-center gap-1">
+                <Link
+                  href={href}
+                  className={[
+                    "flex flex-1 items-center gap-2.5 rounded-md px-3 py-2 text-sm transition-colors",
+                    active
+                      ? "bg-zinc-100 font-medium text-zinc-900 dark:bg-zinc-800 dark:text-zinc-50"
+                      : "text-zinc-600 hover:bg-zinc-50 hover:text-zinc-900 dark:text-zinc-400 dark:hover:bg-zinc-900 dark:hover:text-zinc-100",
+                    isAdmin && !itemVisible ? "opacity-40" : "",
+                  ].join(" ")}
+                >
+                  <Icon className="h-4 w-4 shrink-0" />
+                  <span className="truncate">{c.title}</span>
+                </Link>
+                {isAdmin && (
+                  <button
+                    onClick={() => void toggleTopic(c.visibilitySlug, !itemVisible)}
+                    title={itemVisible ? "Ocultar ciudad" : "Mostrar ciudad"}
+                    aria-label={itemVisible ? "Ocultar ciudad" : "Mostrar ciudad"}
+                    className={[
+                      "flex h-8 w-8 shrink-0 items-center justify-center rounded-md transition-colors",
+                      itemVisible
+                        ? "text-emerald-600 hover:bg-emerald-50 dark:hover:bg-emerald-950/40"
+                        : "text-zinc-400 hover:bg-zinc-100 dark:hover:bg-zinc-800",
+                    ].join(" ")}
+                  >
+                    {itemVisible ? <Eye className="h-4 w-4" /> : <EyeOff className="h-4 w-4" />}
+                  </button>
+                )}
+              </li>
+            );
+          })}
+        </ul>
       )}
     </div>
   );

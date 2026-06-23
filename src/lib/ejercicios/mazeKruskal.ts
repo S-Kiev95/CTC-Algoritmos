@@ -45,7 +45,16 @@ export type Maze = {
   carved: [number, number][];
   /** Lista de adyacencia: adj[cell] = celdas alcanzables (pasaje directo). */
   adj: number[][];
+  /** Peso (costo) de cada pasaje, clave `${min}-${max}`. Aleatorio 1..9. */
+  weights: Record<string, number>;
 };
+
+const wkey = (a: number, b: number) => (a < b ? `${a}-${b}` : `${b}-${a}`);
+
+/** Costo de moverse entre dos celdas vecinas conectadas. */
+export function edgeWeight(maze: Maze, a: number, b: number): number {
+  return maze.weights[wkey(a, b)] ?? 1;
+}
 
 /**
  * Genera un laberinto perfecto (Kruskal + Union-Find) y devuelve su estructura
@@ -78,15 +87,34 @@ export function generateMaze(rows = 8, cols = 8): Maze {
 
   const carved: [number, number][] = [];
   const adj: number[][] = Array.from({ length: n }, () => []);
+  const weights: Record<string, number> = {};
+  const open = (a: number, b: number) => {
+    carved.push([a, b]);
+    adj[a].push(b);
+    adj[b].push(a);
+    weights[wkey(a, b)] = 1 + Math.floor(Math.random() * 9); // 1..9
+  };
+
   for (const [a, b] of walls) {
     if (find(a) !== find(b)) {
       parent[find(a)] = find(b);
-      carved.push([a, b]);
-      adj[a].push(b);
-      adj[b].push(a);
+      open(a, b);
     }
   }
-  return { rows, cols, carved, adj };
+
+  // Pasajes extra: rompen algunos muros más para crear bucles. Así hay varios
+  // caminos posibles entre dos celdas y los pesos deciden cuál conviene (clave
+  // para que Dijkstra/A* tengan algo interesante que optimizar).
+  let extra = Math.round(n * 0.12);
+  for (const [a, b] of walls) {
+    if (extra <= 0) break;
+    if (!weights[wkey(a, b)]) {
+      open(a, b);
+      extra--;
+    }
+  }
+
+  return { rows, cols, carved, adj, weights };
 }
 
 /**

@@ -52,7 +52,9 @@ export default function RecorridoPage() {
           code={code}
           steps={steps}
           title={title}
-          renderVisualization={(step) => <PathBoard state={step.state} />}
+          renderVisualization={(step) => (
+            <PathBoard state={step.state} weights={maze.weights} />
+          )}
         />
       </div>
     </div>
@@ -75,9 +77,10 @@ export default function RecorridoPage() {
         resumen: (
           <>
             Sobre el laberinto generado con Kruskal buscamos el camino de la
-            esquina superior izquierda a la inferior derecha. Como hay un único
-            camino entre dos celdas, todos encuentran el mismo; lo interesante es{" "}
-            <strong>cuántas celdas explora cada uno</strong>.
+            esquina superior izquierda a la inferior derecha. Ahora cada pasaje
+            tiene un <strong>costo aleatorio</strong> (el número entre celdas), así
+            que el camino más barato no es el de menos cuadras. Compará el{" "}
+            <strong>costo</strong> y <strong>cuántas celdas explora cada uno</strong>.
           </>
         ),
         lectura: [
@@ -152,7 +155,7 @@ export default function RecorridoPage() {
           "¿Qué ventaja da buscar desde los dos extremos a la vez?",
           "¿Qué es la heurística en A* y qué estima?",
           "¿Por qué A* suele explorar menos celdas que Dijkstra?",
-          "En este laberinto, ¿por qué los tres encuentran el mismo camino?",
+          "Con pesos aleatorios, ¿por qué el camino más corto en cuadras no siempre es el más barato?",
         ],
       }}
       demos={[
