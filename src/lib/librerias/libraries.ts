@@ -1,4 +1,4 @@
-import { LayoutDashboard, type LucideIcon } from "lucide-react";
+import { LayoutDashboard, Server, type LucideIcon } from "lucide-react";
 
 /**
  * Librerías de utilidad (contenido de referencia). Visibilidad: la sección con
@@ -22,6 +22,14 @@ export const LIBRARIES: Library[] = [
     short: "Interfaces gráficas y dashboards solo con Python",
     icon: LayoutDashboard,
     visibilitySlug: "lib:streamlit",
+    ready: true,
+  },
+  {
+    slug: "fastapi",
+    title: "FastAPI",
+    short: "APIs web rápidas con type hints y docs automáticas",
+    icon: Server,
+    visibilitySlug: "lib:fastapi",
     ready: true,
   },
 ];
