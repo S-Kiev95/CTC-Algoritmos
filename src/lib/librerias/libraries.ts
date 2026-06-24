@@ -1,4 +1,4 @@
-import { LayoutDashboard, Server, type LucideIcon } from "lucide-react";
+import { LayoutDashboard, Server, Database, type LucideIcon } from "lucide-react";
 
 /**
  * Librerías de utilidad (contenido de referencia). Visibilidad: la sección con
@@ -30,6 +30,14 @@ export const LIBRARIES: Library[] = [
     short: "APIs web rápidas con type hints y docs automáticas",
     icon: Server,
     visibilitySlug: "lib:fastapi",
+    ready: true,
+  },
+  {
+    slug: "sqlmodel",
+    title: "SQLModel",
+    short: "Base de datos SQL con modelos Python (Pydantic + SQLAlchemy)",
+    icon: Database,
+    visibilitySlug: "lib:sqlmodel",
     ready: true,
   },
 ];
