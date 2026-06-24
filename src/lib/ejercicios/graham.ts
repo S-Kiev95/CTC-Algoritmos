@@ -130,6 +130,9 @@ export function generateGrahamSteps(points: Point[]): Step<GrahamState>[] {
     return steps;
   }
 
+  const fmtP = (i: number) => `(${points[i].x}, ${points[i].y})`;
+  const fmtHull = (h: number[]) => "[" + h.map(fmtP).join(", ") + "]";
+
   // p0: índice del punto más abajo / izquierda.
   let p0 = 0;
   for (let i = 1; i < n; i++) {
@@ -141,6 +144,10 @@ export function generateGrahamSteps(points: Point[]): Step<GrahamState>[] {
     state: { points, p0, hull: [p0] },
     line: 15,
     note: "p0: el punto más abajo (y, si empatan, el más a la izquierda). Es seguro que está en el casco.",
+    watch: [
+      { name: "p0", value: fmtP(p0), kind: "input", changed: true },
+      { name: "hull", value: fmtHull([p0]), kind: "computed" },
+    ],
   });
 
   // Orden polar (índices), p0 primero.
@@ -157,6 +164,11 @@ export function generateGrahamSteps(points: Point[]): Step<GrahamState>[] {
     state: { points, p0, order, hull: [p0] },
     line: 18,
     note: "Se ordenan los demás puntos por su ángulo polar respecto de p0.",
+    watch: [
+      { name: "p0", value: fmtP(p0), kind: "input" },
+      { name: "por procesar", value: String(order.length - 1), kind: "computed", changed: true },
+      { name: "hull", value: fmtHull([p0]), kind: "computed" },
+    ],
   });
 
   const hull: number[] = [p0];
@@ -178,22 +190,43 @@ export function generateGrahamSteps(points: Point[]): Step<GrahamState>[] {
         note: c === 0
           ? "Punto colineal: se descarta para no dejar vértices de más."
           : "El giro es a la derecha (cóncavo): se descarta el último del casco.",
+        watch: [
+          { name: "p (candidato)", value: fmtP(p), kind: "input" },
+          { name: "últimos 2 del hull", value: `${fmtP(hull[hull.length - 2])}, ${fmtP(popped)}`, kind: "computed" },
+          { name: "giro(a,b,p)", value: `${c}  (≤ 0 → sacar)`, kind: "computed", changed: true },
+          { name: "len(hull)", value: String(hull.length), kind: "computed" },
+        ],
       });
       hull.pop();
     }
+    const pushC =
+      hull.length >= 2
+        ? cross(points[hull[hull.length - 2]], points[hull[hull.length - 1]], points[p])
+        : null;
     hull.push(p);
     steps.push({
       state: { points, p0, order, hull: [...hull], current: p, turn: "left" },
       line: 25,
       note: "Giro antihorario: el punto entra al casco.",
+      watch: [
+        { name: "p (candidato)", value: fmtP(p), kind: "input" },
+        { name: "giro(a,b,p)", value: pushC === null ? "— (hull < 2)" : `${pushC}  (> 0 → agregar)`, kind: "computed", changed: true },
+        { name: "hull", value: fmtHull(hull), kind: "computed" },
+      ],
     });
   }
 
   const hullPts = hull.map((i) => points[i]);
+  const area = polygonArea(hullPts);
   steps.push({
-    state: { points, p0, order, hull: [...hull], closed: true, area: polygonArea(hullPts) },
+    state: { points, p0, order, hull: [...hull], closed: true, area },
     line: 26,
     note: "Casco convexo cerrado. El polígono que envuelve a todos los puntos.",
+    watch: [
+      { name: "hull", value: fmtHull(hull), kind: "output" },
+      { name: "vértices", value: String(hull.length), kind: "output" },
+      { name: "área", value: area.toFixed(1), kind: "output", changed: true },
+    ],
   });
 
   return steps;
