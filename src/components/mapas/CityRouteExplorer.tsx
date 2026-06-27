@@ -3,7 +3,6 @@
 import { useCallback, useEffect, useMemo, useState } from "react";
 import { BookOpen, MapPin, Navigation, RefreshCw, RotateCcw, Waypoints } from "lucide-react";
 import { AlgorithmPlayer } from "@/components/AlgorithmPlayer";
-import { ResizableTopicShell } from "@/components/ResizableTopicShell";
 import { ReadingPane } from "@/components/ejercicios/ExerciseLesson";
 import { CityMap } from "@/components/mapas/CityMap";
 import type { City } from "@/lib/mapas/cities";
@@ -149,21 +148,24 @@ export function CityRouteExplorer({ city }: { city: City }) {
   );
 
   return (
-    <ResizableTopicShell header={header}>
-      <Body
-        tab={tab}
-        cityTitle={city.title}
-        graph={graph}
-        loading={loading}
-        error={error}
-        start={start}
-        goal={goal}
-        steps={steps}
-        code={code}
-        onPick={pick}
-        onRetry={() => load(true)}
-      />
-    </ResizableTopicShell>
+    <div className="flex h-full flex-col">
+      {header}
+      <div className="min-h-0 flex-1">
+        <Body
+          tab={tab}
+          cityTitle={city.title}
+          graph={graph}
+          loading={loading}
+          error={error}
+          start={start}
+          goal={goal}
+          steps={steps}
+          code={code}
+          onPick={pick}
+          onRetry={() => load(true)}
+        />
+      </div>
+    </div>
   );
 }
 
@@ -226,7 +228,7 @@ function Body({
           {start !== null ? " y la " : " y luego la "}
           <strong>meta</strong>.
         </div>
-        <div className="min-h-0 flex-1 overflow-auto p-4">
+        <div className="flex min-h-0 flex-1 p-4">
           <CityMap graph={graph} start={start} goal={goal} onPick={onPick} />
         </div>
       </div>
@@ -239,6 +241,7 @@ function Body({
       code={code}
       steps={steps}
       title="Recorriendo las calles"
+      layout="stacked"
       renderVisualization={(step) => (
         <CityMap graph={graph} state={step.state} start={start} goal={goal} onPick={onPick} />
       )}

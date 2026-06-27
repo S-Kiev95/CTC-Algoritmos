@@ -79,11 +79,14 @@ export function CityMap({
 
   function handleClick(ev: React.MouseEvent<SVGSVGElement>) {
     if (!onPick) return;
-    const rect = ev.currentTarget.getBoundingClientRect();
-    const x = ((ev.clientX - rect.left) / rect.width) * W;
-    const y = ((ev.clientY - rect.top) / rect.height) * H;
-    const lon = w + (x / W) * (e - w);
-    const lat = n - (y / H) * (n - s);
+    const svg = ev.currentTarget;
+    const ctm = svg.getScreenCTM();
+    if (!ctm) return;
+    // Convertir las coords de pantalla a coords del viewBox (preciso aunque la
+    // SVG esté escalada o con letterbox por preserveAspectRatio).
+    const loc = new DOMPoint(ev.clientX, ev.clientY).matrixTransform(ctm.inverse());
+    const lon = w + (loc.x / W) * (e - w);
+    const lat = n - (loc.y / H) * (n - s);
     onPick(nearestNode(graph, lat, lon));
   }
 
@@ -92,15 +95,15 @@ export function CityMap({
   );
 
   return (
-    <div className="w-full">
+    <div className="flex h-full min-h-0 w-full items-center justify-center">
       <svg
         viewBox={`0 0 ${W} ${H}`}
         onClick={handleClick}
+        preserveAspectRatio="xMidYMid meet"
         className={[
-          "w-full rounded-lg border border-zinc-200 bg-white dark:border-zinc-800 dark:bg-zinc-950",
+          "h-full max-h-full w-auto max-w-full min-h-[260px] rounded-lg border border-zinc-200 bg-white dark:border-zinc-800 dark:bg-zinc-950",
           onPick ? "cursor-crosshair" : "",
         ].join(" ")}
-        style={{ maxHeight: "70vh" }}
       >
         {/* Calles */}
         {streets.map((pts, i) => (

@@ -166,14 +166,14 @@ export function AlgorithmPlayer<TState>({
         className="min-h-0"
       >
         <Panel
-          defaultSize={isStacked ? 62 : 58}
+          defaultSize={isStacked ? 72 : 58}
           minSize={25}
           className="min-h-0"
         >
           {visualizationSection}
         </Panel>
         <ResizeHandle direction={mainDirection} />
-        <Panel defaultSize={isStacked ? 38 : 42} minSize={20} className="min-h-0">
+        <Panel defaultSize={isStacked ? 28 : 42} minSize={20} className="min-h-0">
           {codeSection}
         </Panel>
       </PanelGroup>
