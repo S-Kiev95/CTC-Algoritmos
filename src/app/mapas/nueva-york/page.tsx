@@ -3,6 +3,6 @@
 import { CityRouteExplorer } from "@/components/mapas/CityRouteExplorer";
 import { getCity } from "@/lib/mapas/cities";
 
-export default function SaltoPage() {
-  return <CityRouteExplorer city={getCity("salto")!} />;
+export default function NuevaYorkPage() {
+  return <CityRouteExplorer city={getCity("nueva-york")!} />;
 }

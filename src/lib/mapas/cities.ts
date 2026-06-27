@@ -37,7 +37,7 @@ export const CITIES: City[] = [
     icon: MapPin,
     bbox: [-34.611, -58.39, -34.599, -58.374],
     visibilitySlug: "mapa:buenos-aires",
-    ready: false,
+    ready: true,
   },
   {
     slug: "nueva-york",
@@ -46,7 +46,7 @@ export const CITIES: City[] = [
     icon: MapPin,
     bbox: [40.752, -73.993, 40.764, -73.978],
     visibilitySlug: "mapa:nueva-york",
-    ready: false,
+    ready: true,
   },
   {
     slug: "roma",
@@ -55,7 +55,7 @@ export const CITIES: City[] = [
     icon: MapPin,
     bbox: [41.884, 12.485, 41.896, 12.499],
     visibilitySlug: "mapa:roma",
-    ready: false,
+    ready: true,
   },
 ];
 
