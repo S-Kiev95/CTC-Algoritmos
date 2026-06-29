@@ -168,7 +168,6 @@ function MinimaxDemo() {
     <AlgorithmPlayer
       code={MINIMAX_CODE}
       steps={steps}
-      layout="stacked"
       title="Minimax explorando el árbol y propagando valores"
       renderVisualization={(step) => <MinimaxVis state={step.state} />}
     />
