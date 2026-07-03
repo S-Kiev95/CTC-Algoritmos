@@ -1,4 +1,4 @@
-import { LayoutDashboard, Server, Database, type LucideIcon } from "lucide-react";
+import { LayoutDashboard, Server, Database, Gamepad2, type LucideIcon } from "lucide-react";
 
 /**
  * Librerías de utilidad (contenido de referencia). Visibilidad: la sección con
@@ -38,6 +38,14 @@ export const LIBRARIES: Library[] = [
     short: "Base de datos SQL con modelos Python (Pydantic + SQLAlchemy)",
     icon: Database,
     visibilitySlug: "lib:sqlmodel",
+    ready: true,
+  },
+  {
+    slug: "pygame",
+    title: "Pygame",
+    short: "Videojuegos 2D en Python: pantalla, bucle, sprites, sonido",
+    icon: Gamepad2,
+    visibilitySlug: "lib:pygame",
     ready: true,
   },
 ];
