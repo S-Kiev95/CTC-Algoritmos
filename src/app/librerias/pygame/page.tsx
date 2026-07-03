@@ -224,11 +224,15 @@ if teclas[pygame.K_DOWN]:
       <Code>{`# Como evento
 for evento in pygame.event.get():
     if evento.type == pygame.MOUSEBUTTONDOWN:
-        print("click en", evento.pos)   # (x, y) del click
+        print("apreto en", evento.pos)  # (x, y) del click
         if evento.button == 1:          # 1 izq, 2 medio, 3 der
             disparar(evento.pos)
+    elif evento.type == pygame.MOUSEBUTTONUP:
+        print("solto en", evento.pos)   # util para arrastrar
     elif evento.type == pygame.MOUSEMOTION:
         print("mouse en", evento.pos)
+    elif evento.type == pygame.MOUSEWHEEL:
+        print("scroll", evento.y)       # +1 arriba, -1 abajo
 
 # Como estado, cada frame
 mx, my = pygame.mouse.get_pos()
@@ -238,6 +242,31 @@ izq, medio, der = pygame.mouse.get_pressed()`}</Code>
         <code>K_a</code> … <code>K_z</code>, <code>K_0</code> … <code>K_9</code>,{" "}
         <code>K_SPACE</code>, <code>K_RETURN</code>, <code>K_LSHIFT</code>,{" "}
         <code>K_LEFT/RIGHT/UP/DOWN</code>, etc.
+      </p>
+
+      <h2>Eventos propios y temporizadores</h2>
+      <p>
+        Además de los eventos del sistema, podés crear los tuyos y hacer que se
+        disparen <strong>cada cierto tiempo</strong>. Es la forma típica de{" "}
+        <em>aparecer enemigos cada X milisegundos</em> sin ensuciar el bucle con
+        contadores:
+      </p>
+      <Code>{`# 1) Reservar un tipo de evento propio
+APARECER_ENEMIGO = pygame.event.custom_type()   # o pygame.USEREVENT + 1
+
+# 2) Que se dispare cada 800 ms (0 para apagarlo)
+pygame.time.set_timer(APARECER_ENEMIGO, 800)
+
+# 3) Atenderlo como cualquier otro evento
+for evento in pygame.event.get():
+    if evento.type == APARECER_ENEMIGO:
+        crear_enemigo()`}</Code>
+      <p>
+        También podés <strong>lanzar un evento a mano</strong> con{" "}
+        <code>pygame.event.post(pygame.event.Event(MI_EVENTO))</code> — por ejemplo,
+        para avisar &ldquo;subiste de nivel&rdquo; desde cualquier parte del código.
+        Para timers de una sola vez, <code>pygame.time.get_ticks()</code> (ms desde el
+        inicio) suele alcanzar.
       </p>
     </>
   );
@@ -527,7 +556,9 @@ function Metodos() {
       </ul>
 
       <h2>Mostrar texto (puntaje, vidas)</h2>
-      <Code>{`fuente = pygame.font.SysFont(None, 36)
+      <Code>{`fuente = pygame.font.SysFont(None, 36)          # fuente del sistema
+# fuente = pygame.font.Font("mi_fuente.ttf", 36)  # una fuente propia (.ttf)
+
 texto = fuente.render(f"Puntos: {puntos}", True, (255, 255, 255))
 pantalla.blit(texto, (10, 10))`}</Code>
     </>
