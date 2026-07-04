@@ -14,6 +14,7 @@ import {
   EyeOff,
   Home,
   Library,
+  Lightbulb,
   Map as MapIcon,
   PanelLeftClose,
   PanelLeftOpen,
@@ -124,6 +125,7 @@ export function Sidebar() {
           <MinimaxLink collapsed={collapsed} />
           <AlfaBetaLink collapsed={collapsed} />
           <AristasLink collapsed={collapsed} />
+          <VisibilidadLink collapsed={collapsed} />
           <MapasGroup collapsed={collapsed} />
           <LibreriasGroup collapsed={collapsed} />
 
@@ -1080,6 +1082,70 @@ function AristasLink({ collapsed }: { collapsed: boolean }) {
           onClick={() => void toggleTopic("aristas", !isVisible)}
           title={isVisible ? "Ocultar a estudiantes" : "Mostrar a estudiantes"}
           aria-label={isVisible ? "Ocultar Aristas y muros" : "Mostrar Aristas y muros"}
+          className={[
+            "flex h-8 w-8 shrink-0 items-center justify-center rounded-md transition-colors",
+            isVisible
+              ? "text-emerald-600 hover:bg-emerald-50 dark:hover:bg-emerald-950/40"
+              : "text-zinc-400 hover:bg-zinc-100 dark:hover:bg-zinc-800",
+          ].join(" ")}
+        >
+          {isVisible ? <Eye className="h-4 w-4" /> : <EyeOff className="h-4 w-4" />}
+        </button>
+      )}
+    </div>
+  );
+}
+
+/** Link simple "Visibilidad 2D" (una página con pestañas). Gateado por `visibilidad`. */
+function VisibilidadLink({ collapsed }: { collapsed: boolean }) {
+  const pathname = usePathname();
+  const { isAdmin, canSee, visibility, toggleTopic } = useVisibility();
+
+  if (!isAdmin && !canSee("visibilidad")) return null;
+
+  const active = pathname.startsWith("/visibilidad");
+  const isVisible = visibility["visibilidad"] === true;
+  const dimmed = isAdmin && !isVisible;
+
+  if (collapsed) {
+    return (
+      <div className="mt-1">
+        <Link
+          href="/visibilidad"
+          title="Visibilidad 2D"
+          className={[
+            "flex h-9 w-full items-center justify-center rounded-md transition-colors",
+            active
+              ? "bg-zinc-100 text-zinc-900 dark:bg-zinc-800 dark:text-zinc-50"
+              : "text-zinc-600 hover:bg-zinc-50 hover:text-zinc-900 dark:text-zinc-400 dark:hover:bg-zinc-900",
+            dimmed ? "opacity-40" : "",
+          ].join(" ")}
+        >
+          <Lightbulb className="h-4 w-4" />
+        </Link>
+      </div>
+    );
+  }
+
+  return (
+    <div className={["mt-1 flex items-center gap-1", dimmed ? "opacity-50" : ""].join(" ")}>
+      <Link
+        href="/visibilidad"
+        className={[
+          "flex flex-1 items-center gap-2 rounded-md px-3 py-2 text-sm font-medium transition-colors",
+          active
+            ? "bg-zinc-100 text-zinc-900 dark:bg-zinc-800 dark:text-zinc-50"
+            : "text-zinc-700 hover:bg-zinc-50 hover:text-zinc-900 dark:text-zinc-300 dark:hover:bg-zinc-900",
+        ].join(" ")}
+      >
+        <Lightbulb className="h-4 w-4 shrink-0" />
+        <span className="flex-1">Visibilidad 2D</span>
+      </Link>
+      {isAdmin && (
+        <button
+          onClick={() => void toggleTopic("visibilidad", !isVisible)}
+          title={isVisible ? "Ocultar a estudiantes" : "Mostrar a estudiantes"}
+          aria-label={isVisible ? "Ocultar Visibilidad 2D" : "Mostrar Visibilidad 2D"}
           className={[
             "flex h-8 w-8 shrink-0 items-center justify-center rounded-md transition-colors",
             isVisible
