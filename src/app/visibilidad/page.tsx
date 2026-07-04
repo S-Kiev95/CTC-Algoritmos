@@ -1,9 +1,15 @@
 "use client";
 
-import { Lightbulb, Radar } from "lucide-react";
+import { Lightbulb, Radar, Flashlight, Boxes } from "lucide-react";
 import { PythonLesson } from "@/components/python/PythonLesson";
 import { VisibilityLight } from "@/components/visibility/VisibilityLight";
 import { RaycastSensor } from "@/components/visibility/RaycastSensor";
+import {
+  NaiveVsCorners,
+  SweepDemo,
+  FieldOfView,
+  Playground,
+} from "@/components/visibility/VisibilityDemos";
 
 export default function VisibilidadPage() {
   return (
@@ -75,6 +81,10 @@ export default function VisibilidadPage() {
                   &ldquo;mostrar esquinas&rdquo; en la demo). Muchísimos menos rayos, el
                   mismo resultado.
                 </p>
+                <p>
+                  Cambiá entre las dos formas y mirá el contador de rayos:
+                </p>
+                <NaiveVsCorners />
               </>
             ),
           },
@@ -127,6 +137,11 @@ export default function VisibilidadPage() {
                   <br />
                   &nbsp;&nbsp;si cambió la más cercana: cerrar triángulo, abrir otro
                 </p>
+                <p>
+                  Movés el barrido con el slider y ves cómo se va llenando el área
+                  visible:
+                </p>
+                <SweepDemo />
               </>
             ),
           },
@@ -195,6 +210,26 @@ export default function VisibilidadPage() {
         ],
       }}
       demos={[
+        {
+          id: "fov",
+          label: "Alcance y cono",
+          icon: <Flashlight className="h-3.5 w-3.5" />,
+          render: () => (
+            <div className="flex h-full w-full items-start justify-center overflow-auto p-4">
+              <FieldOfView />
+            </div>
+          ),
+        },
+        {
+          id: "playground",
+          label: "Playground",
+          icon: <Boxes className="h-3.5 w-3.5" />,
+          render: () => (
+            <div className="flex h-full w-full items-start justify-center overflow-auto p-4">
+              <Playground />
+            </div>
+          ),
+        },
         {
           id: "sensor",
           label: "Sensor (LIDAR)",
