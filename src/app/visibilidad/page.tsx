@@ -1,10 +1,21 @@
 "use client";
 
-import { Lightbulb, Radar, Flashlight, Boxes, Box } from "lucide-react";
+import dynamic from "next/dynamic";
+import { Lightbulb, Radar, Flashlight, Boxes, Box, Package, Car } from "lucide-react";
 import { PythonLesson } from "@/components/python/PythonLesson";
 import { VisibilityLight } from "@/components/visibility/VisibilityLight";
 import { RaycastSensor } from "@/components/visibility/RaycastSensor";
 import { Raycaster3D } from "@/components/visibility/Raycaster3D";
+import { CarNav } from "@/components/visibility/CarNav";
+
+// Three.js solo en el cliente: no se puede prerenderizar en el export estático.
+const Visibility3D = dynamic(
+  () => import("@/components/visibility/Visibility3D").then((m) => m.Visibility3D),
+  {
+    ssr: false,
+    loading: () => <p className="p-8 text-sm text-zinc-400">Cargando escena 3D…</p>,
+  },
+);
 import {
   NaiveVsCorners,
   SweepDemo,
@@ -233,8 +244,28 @@ export default function VisibilidadPage() {
       }}
       demos={[
         {
+          id: "cubos3d",
+          label: "3D con cubos",
+          icon: <Package className="h-3.5 w-3.5" />,
+          render: () => (
+            <div className="flex h-full w-full items-start justify-center overflow-auto p-4">
+              <Visibility3D />
+            </div>
+          ),
+        },
+        {
+          id: "auto",
+          label: "Auto autónomo",
+          icon: <Car className="h-3.5 w-3.5" />,
+          render: () => (
+            <div className="flex h-full w-full items-start justify-center overflow-auto p-4">
+              <CarNav />
+            </div>
+          ),
+        },
+        {
           id: "vista3d",
-          label: "Vista 3D",
+          label: "Vista 3D (Doom)",
           icon: <Box className="h-3.5 w-3.5" />,
           render: () => (
             <div className="flex h-full w-full items-start justify-center overflow-auto p-4">
