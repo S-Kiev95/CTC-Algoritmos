@@ -1,9 +1,10 @@
 "use client";
 
-import { Lightbulb, Radar, Flashlight, Boxes } from "lucide-react";
+import { Lightbulb, Radar, Flashlight, Boxes, Box } from "lucide-react";
 import { PythonLesson } from "@/components/python/PythonLesson";
 import { VisibilityLight } from "@/components/visibility/VisibilityLight";
 import { RaycastSensor } from "@/components/visibility/RaycastSensor";
+import { Raycaster3D } from "@/components/visibility/Raycaster3D";
 import {
   NaiveVsCorners,
   SweepDemo,
@@ -187,6 +188,27 @@ export default function VisibilidadPage() {
               </>
             ),
           },
+          {
+            titulo: "De 2D a 3D (estilo Doom)",
+            contenido: (
+              <>
+                <p>
+                  El mismo ray casting sirve para <strong>fingir 3D</strong>. Los
+                  primeros juegos en primera persona (Wolfenstein 3D, Doom) no tenían
+                  un motor 3D real: tenían un <strong>mapa 2D</strong> y, por cada
+                  columna de píxeles de la pantalla, lanzaban un rayo hasta la primera
+                  pared. Después dibujaban una <strong>franja vertical</strong> tan
+                  alta como <code>1 / distancia</code>: las paredes cercanas se ven
+                  grandes y las lejanas chicas. ¡Eso es todo!
+                </p>
+                <p>
+                  En la pestaña <strong>Vista 3D</strong> podés caminar en primera
+                  persona por un laberinto renderizado justo así. El minimapa muestra
+                  la vista 2D real desde arriba.
+                </p>
+              </>
+            ),
+          },
         ],
         callouts: [
           {
@@ -210,6 +232,16 @@ export default function VisibilidadPage() {
         ],
       }}
       demos={[
+        {
+          id: "vista3d",
+          label: "Vista 3D",
+          icon: <Box className="h-3.5 w-3.5" />,
+          render: () => (
+            <div className="flex h-full w-full items-start justify-center overflow-auto p-4">
+              <Raycaster3D />
+            </div>
+          ),
+        },
         {
           id: "fov",
           label: "Alcance y cono",
