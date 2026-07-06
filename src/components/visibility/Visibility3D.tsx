@@ -2,7 +2,7 @@
 
 import { useRef, useState } from "react";
 import { Canvas, type ThreeEvent } from "@react-three/fiber";
-import { OrbitControls } from "@react-three/drei";
+import { OrbitControls, Line } from "@react-three/drei";
 
 /**
  * Versión 3D de la visibilidad: una luz-punto ilumina la escena y los **cubos**
@@ -22,19 +22,40 @@ const CUBES: Cube[] = [
   { pos: [-3, 0.5, 1], color: "#fb923c" },
 ];
 
+/** Los 8 vértices de un cubo (que se apoya en el piso, y=0). */
+function cubeVertices(c: Cube): [number, number, number][] {
+  const [cx, cyPos, cz] = c.pos;
+  const h = cyPos * 2;
+  const out: [number, number, number][] = [];
+  for (const x of [cx - 0.5, cx + 0.5])
+    for (const y of [0, h]) for (const z of [cz - 0.5, cz + 0.5]) out.push([x, y, z]);
+  return out;
+}
+
 function Scene({
   light,
   setLight,
   dragging,
   setDragging,
   controlsRef,
+  showRays,
 }: {
   light: [number, number, number];
   setLight: (l: [number, number, number]) => void;
   dragging: boolean;
   setDragging: (v: boolean) => void;
   controlsRef: React.MutableRefObject<{ enabled: boolean } | null>;
+  showRays: boolean;
 }) {
+  // Rayos de la luz a cada vértice de cada cubo (como los rayos a las esquinas
+  // en 2D). En modo `segments`, los puntos se toman de a pares.
+  const rayPairs: [number, number, number][] = [];
+  if (showRays) {
+    for (const c of CUBES)
+      for (const v of cubeVertices(c)) {
+        rayPairs.push(light, v);
+      }
+  }
   const startDrag = (e: ThreeEvent<PointerEvent>) => {
     e.stopPropagation();
     setDragging(true);
@@ -91,6 +112,19 @@ function Scene({
         );
       })}
 
+      {/* Rayos de la luz a los vértices de los cubos */}
+      {showRays && rayPairs.length > 0 && (
+        <Line
+          points={rayPairs}
+          segments
+          color="#fcd34d"
+          lineWidth={1}
+          transparent
+          opacity={0.4}
+          depthTest={false}
+        />
+      )}
+
       {/* Plano invisible a la altura de la luz: solo activo mientras se arrastra,
           captura el mouse para mover la bombita sin puntos muertos. */}
       {dragging && (
@@ -110,6 +144,7 @@ function Scene({
 export function Visibility3D() {
   const [light, setLight] = useState<[number, number, number]>([2.8, 3.5, 3.2]);
   const [dragging, setDragging] = useState(false);
+  const [showRays, setShowRays] = useState(true);
   const controlsRef = useRef<{ enabled: boolean } | null>(null);
 
   const endDrag = () => {
@@ -120,17 +155,23 @@ export function Visibility3D() {
 
   return (
     <div className="flex w-full max-w-xl flex-col items-center gap-3">
-      <label className="flex items-center gap-2 text-[11px] text-zinc-500">
-        altura de la luz
-        <input
-          type="range"
-          min={12}
-          max={70}
-          value={Math.round(light[1] * 10)}
-          onChange={(e) => setLight([light[0], Number(e.target.value) / 10, light[2]])}
-          className="h-1 w-32 accent-amber-500"
-        />
-      </label>
+      <div className="flex flex-wrap items-center justify-center gap-4 text-[11px] text-zinc-500">
+        <label className="flex items-center gap-2">
+          altura de la luz
+          <input
+            type="range"
+            min={12}
+            max={70}
+            value={Math.round(light[1] * 10)}
+            onChange={(e) => setLight([light[0], Number(e.target.value) / 10, light[2]])}
+            className="h-1 w-32 accent-amber-500"
+          />
+        </label>
+        <label className="flex items-center gap-1.5">
+          <input type="checkbox" checked={showRays} onChange={(e) => setShowRays(e.target.checked)} className="accent-amber-500" />
+          rayos a los vértices
+        </label>
+      </div>
 
       <div className="aspect-[4/3] w-full max-w-lg overflow-hidden rounded-lg border border-zinc-800">
         <Canvas
@@ -148,6 +189,7 @@ export function Visibility3D() {
             dragging={dragging}
             setDragging={setDragging}
             controlsRef={controlsRef}
+            showRays={showRays}
           />
           <OrbitControls
             ref={controlsRef as never}
