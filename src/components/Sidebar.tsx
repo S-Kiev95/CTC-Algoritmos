@@ -9,6 +9,7 @@ import {
   ChevronRight,
   Clock,
   Code2,
+  Dices,
   Dumbbell,
   Fence,
   Eye,
@@ -128,6 +129,7 @@ export function Sidebar() {
           <AristasLink collapsed={collapsed} />
           <VisibilidadLink collapsed={collapsed} />
           <TowerDefenseLink collapsed={collapsed} />
+          <DanoLink collapsed={collapsed} />
           <MapasGroup collapsed={collapsed} />
           <LibreriasGroup collapsed={collapsed} />
 
@@ -1212,6 +1214,70 @@ function TowerDefenseLink({ collapsed }: { collapsed: boolean }) {
           onClick={() => void toggleTopic("tower-defense", !isVisible)}
           title={isVisible ? "Ocultar a estudiantes" : "Mostrar a estudiantes"}
           aria-label={isVisible ? "Ocultar Tower Defense" : "Mostrar Tower Defense"}
+          className={[
+            "flex h-8 w-8 shrink-0 items-center justify-center rounded-md transition-colors",
+            isVisible
+              ? "text-emerald-600 hover:bg-emerald-50 dark:hover:bg-emerald-950/40"
+              : "text-zinc-400 hover:bg-zinc-100 dark:hover:bg-zinc-800",
+          ].join(" ")}
+        >
+          {isVisible ? <Eye className="h-4 w-4" /> : <EyeOff className="h-4 w-4" />}
+        </button>
+      )}
+    </div>
+  );
+}
+
+/** Link simple "Daño en juegos" (una página con pestañas). Gateado por `damage`. */
+function DanoLink({ collapsed }: { collapsed: boolean }) {
+  const pathname = usePathname();
+  const { isAdmin, canSee, visibility, toggleTopic } = useVisibility();
+
+  if (!isAdmin && !canSee("damage")) return null;
+
+  const active = pathname.startsWith("/dano");
+  const isVisible = visibility["damage"] === true;
+  const dimmed = isAdmin && !isVisible;
+
+  if (collapsed) {
+    return (
+      <div className="mt-1">
+        <Link
+          href="/dano"
+          title="Daño en juegos"
+          className={[
+            "flex h-9 w-full items-center justify-center rounded-md transition-colors",
+            active
+              ? "bg-zinc-100 text-zinc-900 dark:bg-zinc-800 dark:text-zinc-50"
+              : "text-zinc-600 hover:bg-zinc-50 hover:text-zinc-900 dark:text-zinc-400 dark:hover:bg-zinc-900",
+            dimmed ? "opacity-40" : "",
+          ].join(" ")}
+        >
+          <Dices className="h-4 w-4" />
+        </Link>
+      </div>
+    );
+  }
+
+  return (
+    <div className={["mt-1 flex items-center gap-1", dimmed ? "opacity-50" : ""].join(" ")}>
+      <Link
+        href="/dano"
+        className={[
+          "flex flex-1 items-center gap-2 rounded-md px-3 py-2 text-sm font-medium transition-colors",
+          active
+            ? "bg-zinc-100 text-zinc-900 dark:bg-zinc-800 dark:text-zinc-50"
+            : "text-zinc-700 hover:bg-zinc-50 hover:text-zinc-900 dark:text-zinc-300 dark:hover:bg-zinc-900",
+        ].join(" ")}
+      >
+        <Dices className="h-4 w-4 shrink-0" />
+        <span className="flex-1">Daño en juegos</span>
+      </Link>
+      {isAdmin && (
+        <button
+          onClick={() => void toggleTopic("damage", !isVisible)}
+          title={isVisible ? "Ocultar a estudiantes" : "Mostrar a estudiantes"}
+          aria-label={isVisible ? "Ocultar Daño en juegos" : "Mostrar Daño en juegos"}
           className={[
             "flex h-8 w-8 shrink-0 items-center justify-center rounded-md transition-colors",
             isVisible
