@@ -20,6 +20,20 @@ function emptyGrid(): Grid {
   return Array.from({ length: ROWS }, () => Array(COLS).fill(0));
 }
 
+/** Laberinto inicial: paredes en serpentina para que el campo de flujo tenga que
+ *  rodearlas (y los enemigos no vayan derecho). "Limpiar torres" lo vacía. */
+function initialGrid(): Grid {
+  const g = emptyGrid();
+  const wall = (c: number, rows: number[]) => rows.forEach((r) => (g[r][c] = 1));
+  wall(3, [0, 1, 2, 3, 4, 5, 6]);
+  wall(6, [3, 4, 5, 6, 7, 8, 9]);
+  wall(9, [0, 1, 2, 3, 4, 5, 6]);
+  wall(11, [3, 4, 5, 6, 7, 8, 9]);
+  g[SPAWN.r][SPAWN.c] = 0;
+  g[GOAL.r][GOAL.c] = 0;
+  return g;
+}
+
 /** Color de calor por distancia (cerca de la meta = cálido). */
 function heat(d: number, max: number): string {
   const t = max > 0 ? d / max : 0;
@@ -35,7 +49,7 @@ function heat(d: number, max: number): string {
  * siguen. Reimplementación propia del artículo de Red Blob Games.
  */
 export function TowerDefense() {
-  const [grid, setGrid] = useState<Grid>(emptyGrid);
+  const [grid, setGrid] = useState<Grid>(initialGrid);
   const [showDist, setShowDist] = useState(true);
   const [showArrows, setShowArrows] = useState(true);
   const [, setTick] = useState(0);
