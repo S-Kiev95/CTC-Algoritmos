@@ -29,36 +29,33 @@ export type PacState = {
   done?: boolean;
 };
 
-export const PACMAN_CODE = `def par_al_azar(lo, hi):        # indice PAR: ahi van los muros
-    op = [v for v in range(lo, hi + 1) if v % 2 == 0]
-    return random.choice(op) if op else None
-
-def impar_al_azar(lo, hi):      # indice IMPAR: ahi van los huecos
-    op = [v for v in range(lo, hi + 1) if v % 2 == 1]
+export const PACMAN_CODE = `# los muros van en indices PARES y los huecos en IMPARES
+def al_azar(lo, hi, par):
+    op = [v for v in range(lo, hi + 1) if v % 2 == (0 if par else 1)]
     return random.choice(op) if op else None
 
 def dividir(grid, x, y, w, h):
-    if w < 3 and h < 3: return              # region muy chica: listo
-    if   h < 3: horizontal = False          # no entra un muro horizontal
+    if w < 3 and h < 3: return          # region muy chica: listo
+    if   h < 3: horizontal = False      # no entra un muro horizontal
     elif w < 3: horizontal = True
     else:       horizontal = h > w if w != h else random.random() < 0.5
 
     if horizontal:
-        wy = par_al_azar(y + 1, y + h - 2)      # fila del muro
-        px = impar_al_azar(x, x + w - 1)        # columna del hueco
+        wy = al_azar(y + 1, y + h - 2, par=True)   # fila del muro
+        px = al_azar(x, x + w - 1, par=False)      # columna del hueco
         if wy is None or px is None: return
         for cx in range(x, x + w): grid[wy][cx] = MURO
-        grid[wy][px] = LIBRE                    # abrir el pasaje
-        dividir(grid, x, y, w, wy - y)                # mitad de arriba
-        dividir(grid, x, wy + 1, w, y + h - wy - 1)   # mitad de abajo
+        grid[wy][px] = LIBRE                       # abrir el pasaje
+        dividir(grid, x, y, w, wy - y)                # arriba
+        dividir(grid, x, wy + 1, w, y + h - wy - 1)   # abajo
     else:
-        wx = par_al_azar(x + 1, x + w - 2)      # columna del muro
-        py = impar_al_azar(y, y + h - 1)        # fila del hueco
+        wx = al_azar(x + 1, x + w - 2, par=True)   # columna del muro
+        py = al_azar(y, y + h - 1, par=False)      # fila del hueco
         if wx is None or py is None: return
         for cy in range(y, y + h): grid[cy][wx] = MURO
-        grid[py][wx] = LIBRE
-        dividir(grid, x, y, wx - x, h)                # mitad izquierda
-        dividir(grid, wx + 1, y, x + w - wx - 1, h)   # mitad derecha
+        grid[py][wx] = LIBRE                       # abrir el pasaje
+        dividir(grid, x, y, wx - x, h)                # izquierda
+        dividir(grid, wx + 1, y, x + w - wx - 1, h)   # derecha
 `;
 
 /**
@@ -148,7 +145,7 @@ export function generateMazeSteps(rows: number, cols: number): Step<PacState>[] 
     if (w < 3 && h < 3) {
       steps.push({
         state: snap(region, null, depth),
-        line: 10,
+        line: 7,
         sound: "tick",
         note: `Región de ${w}×${h}: muy chica para dividir, se deja como pasillo.`,
       });
@@ -162,7 +159,7 @@ export function generateMazeSteps(rows: number, cols: number): Step<PacState>[] 
 
     steps.push({
       state: snap(region, null, depth),
-      line: 13,
+      line: 10,
       sound: "tick",
       note: `Región de ${w}×${h} (nivel ${depth}): se corta con un muro ${horizontal ? "horizontal" : "vertical"} (siempre por el lado más largo).`,
     });
@@ -181,7 +178,7 @@ export function generateMazeSteps(rows: number, cols: number): Step<PacState>[] 
       muros--;
       steps.push({
         state: snap(region, { cells, gap: [wy, px] }, depth),
-        line: 20,
+        line: 17,
         sound: "place",
         note: `Muro horizontal en la fila ${wy} (par), con el hueco en la columna ${px} (impar).`,
       });
@@ -201,7 +198,7 @@ export function generateMazeSteps(rows: number, cols: number): Step<PacState>[] 
       muros--;
       steps.push({
         state: snap(region, { cells, gap: [py, wx] }, depth),
-        line: 28,
+        line: 25,
         sound: "place",
         note: `Muro vertical en la columna ${wx} (par), con el hueco en la fila ${py} (impar).`,
       });
@@ -212,7 +209,7 @@ export function generateMazeSteps(rows: number, cols: number): Step<PacState>[] 
 
   steps.push({
     state: snap(null, null, 0),
-    line: 9,
+    line: 6,
     note: "Arrancamos con un rectángulo vacío (solo el borde es muro).",
   });
 
@@ -220,7 +217,7 @@ export function generateMazeSteps(rows: number, cols: number): Step<PacState>[] 
 
   steps.push({
     state: snap(null, null, 0, { done: true }),
-    line: 10,
+    line: 7,
     sound: "found",
     note: `¡Listo! Laberinto generado con ${muros} celdas de muro. Todas las celdas libres quedan conectadas.`,
   });

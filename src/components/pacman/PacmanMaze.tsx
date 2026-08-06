@@ -18,22 +18,29 @@ export function PacmanMaze({
   wall = null,
   dots = false,
   cell = CELL,
+  maxHeight,
 }: {
   grid: number[][];
   region?: Region | null;
   wall?: PacState["wall"];
   dots?: boolean;
   cell?: number;
+  /** Tope de altura, para que el laberinto entre en el panel sin recortarse. */
+  maxHeight?: string;
 }) {
   const rows = grid.length;
   const cols = grid[0].length;
   const W = cols * cell;
   const H = rows * cell;
-  const gapKey = wall ? `${wall.gap[0]},${wall.gap[1]}` : null;
   const wallSet = new Set(wall?.cells.map(([r, c]) => `${r},${c}`) ?? []);
 
   return (
-    <svg viewBox={`0 0 ${W} ${H}`} className="w-full max-w-2xl rounded-lg" style={{ background: "#000" }}>
+    <svg
+      viewBox={`0 0 ${W} ${H}`}
+      preserveAspectRatio="xMidYMid meet"
+      className="w-full max-w-2xl rounded-lg"
+      style={{ background: "#000", maxHeight }}
+    >
       {/* Región que se está dividiendo */}
       {region && (
         <rect
@@ -98,7 +105,9 @@ export function PacmanMazeStep({ state }: { state: PacState }) {
   const { grid, region, wall, depth, muros } = state;
   return (
     <div className="flex w-full flex-col items-center gap-2">
-      <PacmanMaze grid={grid} region={region} wall={wall} />
+      <div className="flex w-full max-w-md justify-center">
+        <PacmanMaze grid={grid} region={region} wall={wall} maxHeight="min(50vh, 340px)" />
+      </div>
       <div className="flex flex-wrap justify-center gap-x-4 gap-y-1 text-[11px] text-zinc-400">
         <span>nivel de recursión: <strong className="text-amber-500">{depth}</strong></span>
         <span>celdas de muro: <strong className="text-sky-400">{muros}</strong></span>

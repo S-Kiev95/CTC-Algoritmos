@@ -203,7 +203,6 @@ function DivisionDemo() {
     <AlgorithmPlayer
       code={PACMAN_CODE}
       steps={steps}
-      layout="stacked"
       title="División recursiva: cada muro parte una región en dos"
       renderVisualization={(step) => <PacmanMazeStep state={step.state} />}
     />
