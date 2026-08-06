@@ -1,11 +1,17 @@
 "use client";
 
 import { useMemo, useState } from "react";
-import { BookOpen, GitBranch, ListOrdered, Plus, Search } from "lucide-react";
+import { BookOpen, GitBranch, ListOrdered, Plus, Scale, Search } from "lucide-react";
 import { AlgorithmPlayer } from "@/components/AlgorithmPlayer";
 import { ResizableTopicShell } from "@/components/ResizableTopicShell";
 import { Teoria } from "@/components/Teoria";
 import { BSTView } from "@/components/algorithms/BSTView";
+import { BalancedTreesView } from "@/components/algorithms/BalancedTreesView";
+import {
+  BALANCED_CODE,
+  BALANCED_VALUES,
+  generateBalancedSteps,
+} from "@/lib/algorithms/binary-tree/balanced";
 import {
   INSERT_BST_CODE,
   generateInsertBstSteps,
@@ -31,7 +37,7 @@ import {
   SAMPLE_INSERT_VALUES,
 } from "@/lib/algorithms/binary-tree/sampleBst";
 
-type DemoKey = "teoria" | "insert" | "search" | "traversal";
+type DemoKey = "teoria" | "insert" | "search" | "traversal" | "balanceados";
 type TraversalOrder = "inorder" | "preorder" | "postorder";
 
 const SEARCH_TARGETS = [
@@ -126,6 +132,13 @@ export default function ArbolesBinariosPage() {
             >
               Recorridos
             </TabButton>
+            <TabButton
+              active={demo === "balanceados"}
+              onClick={() => setDemo("balanceados")}
+              icon={<Scale className="h-3.5 w-3.5" />}
+            >
+              AVL vs Rojo-Negro
+            </TabButton>
           </div>
 
           {demo === "search" && (
@@ -177,6 +190,12 @@ export default function ArbolesBinariosPage() {
               valores = [{SAMPLE_INSERT_VALUES.join(", ")}]
             </span>
           )}
+
+          {demo === "balanceados" && (
+            <span className="font-mono text-xs text-zinc-500">
+              valores = [{BALANCED_VALUES.join(", ")}] — en orden creciente (el peor caso)
+            </span>
+          )}
         </div>
     </header>
   );
@@ -191,6 +210,7 @@ export default function ArbolesBinariosPage() {
       {demo === "traversal" && (
         <TraversalDemo key={`t-${traversalOrder}`} order={traversalOrder} />
       )}
+      {demo === "balanceados" && <BalancedDemo />}
     </ResizableTopicShell>
   );
 }
@@ -328,6 +348,107 @@ function BSTTeoria() {
             </>
           ),
         },
+        {
+          titulo: "El problema: un BST se puede desbalancear",
+          contenido: (
+            <>
+              <p>
+                Todo lo bueno del BST depende de que esté <strong>equilibrado</strong>.
+                Si insertás los valores <em>en orden</em> (10, 20, 30, 40…), cada uno
+                va siempre a la derecha del anterior: el árbol degenera en una{" "}
+                <strong>lista enlazada</strong> y buscar vuelve a costar{" "}
+                <span className="font-mono">O(n)</span>.
+              </p>
+              <p>
+                La solución son los <strong>árboles balanceados</strong>, que se
+                reacomodan solos con <strong>rotaciones</strong>: operaciones que
+                cambian quién es padre de quién <em>sin romper el orden</em> del BST.
+                Los dos más usados son el <strong>AVL</strong> y el{" "}
+                <strong>Rojo-Negro</strong>.
+              </p>
+            </>
+          ),
+        },
+        {
+          titulo: "AVL: el estricto",
+          contenido: (
+            <>
+              <p>
+                Cada nodo guarda su <strong>factor de balance</strong>: la altura del
+                subárbol derecho menos la del izquierdo. La regla es dura: ese número
+                solo puede ser <strong>−1, 0 o +1</strong>.
+              </p>
+              <p>
+                Si al insertar un nodo el factor llega a ±2, el árbol{" "}
+                <strong>rota</strong> para arreglarlo. Hay cuatro casos, según de qué
+                lado quedó el desbalance:
+              </p>
+              <ul className="ml-5 list-disc space-y-1">
+                <li><strong>LL</strong> (pesa izquierda-izquierda): una rotación simple a la derecha.</li>
+                <li><strong>RR</strong> (derecha-derecha): una rotación simple a la izquierda.</li>
+                <li><strong>LR</strong> (izquierda-derecha): rotación doble — primero el hijo, después el nodo.</li>
+                <li><strong>RL</strong> (derecha-izquierda): la doble simétrica.</li>
+              </ul>
+              <p>
+                Al ser tan estricto queda <strong>bien bajito</strong> (búsquedas
+                rapidísimas), pero paga el precio de <strong>rotar seguido</strong> al
+                insertar y borrar.
+              </p>
+            </>
+          ),
+        },
+        {
+          titulo: "Rojo-Negro: el flexible",
+          contenido: (
+            <>
+              <p>
+                En vez de medir alturas, pinta cada nodo de{" "}
+                <strong>rojo o negro</strong> y respeta estas reglas:
+              </p>
+              <ul className="ml-5 list-disc space-y-1">
+                <li>La <strong>raíz</strong> es negra.</li>
+                <li>Un nodo rojo <strong>no puede tener un hijo rojo</strong> (nunca dos rojos seguidos).</li>
+                <li>
+                  Todo camino desde un nodo hasta las hojas tiene la{" "}
+                  <strong>misma cantidad de nodos negros</strong>.
+                </li>
+              </ul>
+              <p>
+                De esas reglas sale una garantía más floja que la del AVL: ningún
+                camino puede ser más del <strong>doble</strong> de largo que otro. El
+                árbol queda un poco más alto, pero necesita{" "}
+                <strong>muchos menos arreglos</strong> al insertar. El nodo nuevo entra{" "}
+                <em>rojo</em> y, si quedan dos rojos pegados, se recolorea o se rota.
+              </p>
+            </>
+          ),
+        },
+        {
+          titulo: "¿Cuál conviene?",
+          contenido: (
+            <>
+              <ul className="ml-5 list-disc space-y-1">
+                <li>
+                  <strong>AVL</strong> cuando hacés <em>muchas búsquedas</em> y pocas
+                  modificaciones: queda más bajo, así que buscar es más rápido. Se usa
+                  mucho en índices de bases de datos en memoria.
+                </li>
+                <li>
+                  <strong>Rojo-Negro</strong> cuando insertás y borrás <em>todo el
+                  tiempo</em>: rota menos. Por eso lo usan el <code>map</code> y{" "}
+                  <code>set</code> de C++, el <code>TreeMap</code> de Java y el
+                  planificador de procesos de Linux.
+                </li>
+              </ul>
+              <p>
+                Los dos garantizan <span className="font-mono">O(log n)</span> para
+                buscar, insertar y borrar. En la pestaña{" "}
+                <strong>AVL vs Rojo-Negro</strong> podés insertar la misma secuencia en
+                ambos y comparar la altura final y cuánto trabajó cada uno.
+              </p>
+            </>
+          ),
+        },
       ]}
       callouts={[
         {
@@ -337,7 +458,7 @@ function BSTTeoria() {
               Si insertás los valores en orden creciente (1, 2, 3, 4, 5) sobre
               un BST vacío, el árbol degenera en una lista enlazada inclinada
               a la derecha — perdés toda la ventaja. Por eso existen los{" "}
-              <em>árboles balanceados</em> (AVL, Red-Black) que rotan
+              <em>árboles balanceados</em> (AVL, Rojo-Negro) que rotan
               automáticamente para mantenerse balanceados.
             </>
           ),
@@ -349,6 +470,9 @@ function BSTTeoria() {
         "Insertás los valores 5, 3, 7, 1, 4 en ese orden en un ABB vacío. Dibujá el árbol resultante a mano. ¿Qué pasa si los insertás en orden 1, 2, 3, 4, 5? ¿Qué problema genera eso?",
         "¿Por qué para buscar un valor desconocido un ABB es más poderoso que una hash table? ¿Qué limitación tiene la hash table en ese caso?",
         "El método insertar usa recursividad. Explicá con tus palabras qué hace en cada llamada recursiva y cuándo se detiene.",
+        "¿Qué es el factor de balance de un nodo en un AVL y qué valores puede tomar?",
+        "Nombrá las tres reglas de un árbol Rojo-Negro. ¿Qué garantiza el hecho de que todo camino tenga la misma cantidad de negros?",
+        "Un AVL queda más bajo que un Rojo-Negro con los mismos datos. ¿Por qué entonces no se usa siempre AVL? ¿En qué caso conviene cada uno?",
       ]}
       ejercicio={{
         descripcion: (
@@ -418,6 +542,18 @@ function SearchDemo({ target }: { target: number }) {
       steps={steps}
       title={`buscar(raíz, ${target})`}
       renderVisualization={(step) => <BSTView state={step.state} />}
+    />
+  );
+}
+
+function BalancedDemo() {
+  const steps = useMemo(() => generateBalancedSteps(BALANCED_VALUES), []);
+  return (
+    <AlgorithmPlayer
+      code={BALANCED_CODE}
+      steps={steps}
+      title="La misma secuencia en un AVL y en un Rojo-Negro"
+      renderVisualization={(step) => <BalancedTreesView state={step.state} />}
     />
   );
 }
