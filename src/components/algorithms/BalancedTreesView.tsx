@@ -102,6 +102,18 @@ function Tree({
                   transition={transitions.snappy}
                 />
               )}
+              {/* Nodo que rompe la regla: anillo punteado rojo */}
+              {p.node.alert && (
+                <circle
+                  cx={tx(p.x)}
+                  cy={ty(p.depth)}
+                  r={18}
+                  fill="none"
+                  className="stroke-rose-500"
+                  strokeWidth={2}
+                  strokeDasharray="3 2"
+                />
+              )}
               <circle cx={tx(p.x)} cy={ty(p.depth)} r={13} fill={fill} />
               <text
                 x={tx(p.x)}
@@ -135,10 +147,15 @@ function Tree({
 
 /** Dos árboles lado a lado (AVL y Rojo-Negro) con las mismas inserciones. */
 export function BalancedTreesView({ state }: { state: BalancedState }) {
-  const { avl, rb, inserted, avlOp, rbOp, avlRots, rbFixes, avlHeight, rbHeight } = state;
+  const { avl, rb, inserted, avlOp, rbOp, avlRots, rbFixes, avlHeight, rbHeight, phase } = state;
 
   return (
     <div className="flex w-full max-w-4xl flex-col items-center gap-3">
+      {phase === "roto" && (
+        <p className="rounded-md bg-rose-50 px-3 py-1 text-[11px] font-medium text-rose-700 dark:bg-rose-950/50 dark:text-rose-300">
+          Así quedaría sin balancear — los nodos marcados rompen la regla
+        </p>
+      )}
       <div className="flex w-full flex-col gap-4 sm:flex-row">
         <Tree
           root={avl}

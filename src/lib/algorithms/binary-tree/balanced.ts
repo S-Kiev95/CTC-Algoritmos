@@ -20,6 +20,8 @@ export type SnapNode = {
   color?: Color;
   /** Factor de balance (altura derecha − izquierda), solo para el AVL. */
   balance?: number;
+  /** El nodo rompe la regla: |balance| ≥ 2 en AVL, o rojo con padre rojo en RN. */
+  alert?: boolean;
   left: SnapNode | null;
   right: SnapNode | null;
 };
@@ -92,7 +94,27 @@ function avlInsert(
 
 function avlSnap(n: AvlNode | null): SnapNode | null {
   if (!n) return null;
-  return { value: n.value, balance: bf(n), left: avlSnap(n.left), right: avlSnap(n.right) };
+  const b = bf(n);
+  return {
+    value: n.value,
+    balance: b,
+    alert: Math.abs(b) > 1,
+    left: avlSnap(n.left),
+    right: avlSnap(n.right),
+  };
+}
+
+const cloneAvl = (n: AvlNode | null): AvlNode | null =>
+  n ? { value: n.value, h: n.h, left: cloneAvl(n.left), right: cloneAvl(n.right) } : null;
+
+/** Inserta como un BST común, **sin** rebalancear: sirve para mostrar el árbol
+ *  roto un instante antes de la rotación. */
+function avlInsertPlain(node: AvlNode | null, value: number): AvlNode {
+  if (!node) return { value, h: 1, left: null, right: null };
+  if (value < node.value) node.left = avlInsertPlain(node.left, value);
+  else if (value > node.value) node.right = avlInsertPlain(node.right, value);
+  else return node;
+  return fix(node);
 }
 
 // ── Rojo-Negro (inserción funcional de Okasaki) ──────────────────────────────
@@ -164,9 +186,40 @@ function rbInsert(root: RbNode | null, value: number, ctx: { fixes: number }): R
   return n;
 }
 
-function rbSnap(n: RbNode | null): SnapNode | null {
+function rbSnap(n: RbNode | null, parentRed = false): SnapNode | null {
   if (!n) return null;
-  return { value: n.value, color: n.color, left: rbSnap(n.left), right: rbSnap(n.right) };
+  const isRed = n.color === "R";
+  return {
+    value: n.value,
+    color: n.color,
+    alert: isRed && parentRed, // dos rojos seguidos: rompe la regla
+    left: rbSnap(n.left, isRed),
+    right: rbSnap(n.right, isRed),
+  };
+}
+
+const cloneRb = (n: RbNode | null): RbNode | null =>
+  n ? { value: n.value, color: n.color, left: cloneRb(n.left), right: cloneRb(n.right) } : null;
+
+/** Inserta el nodo nuevo en rojo **sin** arreglar los rojos seguidos. */
+function rbInsPlain(node: RbNode | null, value: number): RbNode {
+  if (!node) return { value, color: "R", left: null, right: null };
+  if (value < node.value) node.left = rbInsPlain(node.left, value);
+  else if (value > node.value) node.right = rbInsPlain(node.right, value);
+  return node;
+}
+
+/** ¿Algún nodo del árbol está marcado como problemático? */
+function hasAlert(n: SnapNode | null): boolean {
+  if (!n) return false;
+  return !!n.alert || hasAlert(n.left) || hasAlert(n.right);
+}
+
+/** Nodo (valor) que rompe la regla, para nombrarlo en la explicación. */
+function findAlert(n: SnapNode | null): number | null {
+  if (!n) return null;
+  if (n.alert) return n.value;
+  return findAlert(n.left) ?? findAlert(n.right);
 }
 
 // ── Altura y validaciones ────────────────────────────────────────────────────
@@ -220,6 +273,8 @@ export type BalancedState = {
   rbFixes: number;
   avlHeight: number;
   rbHeight: number;
+  /** "roto" = recién insertado, antes de arreglar. "ok" = ya rebalanceado. */
+  phase: "roto" | "ok";
   done?: boolean;
 };
 
@@ -260,58 +315,89 @@ export function generateBalancedSteps(values: number[]): Step<BalancedState>[] {
   let avlRots = 0;
   let rbFixes = 0;
 
-  const snap = (
+  const build = (
+    avl: SnapNode | null,
+    rb: SnapNode | null,
     inserted: number | null,
     avlOp: string | null,
     rbOp: string | null,
+    phase: "roto" | "ok",
     extra: Partial<BalancedState> = {},
-  ): BalancedState => {
-    const avl = avlSnap(avlRoot);
-    const rb = rbSnap(rbRoot);
-    return {
-      avl,
-      rb,
-      inserted,
-      avlOp,
-      rbOp,
-      avlRots,
-      rbFixes,
-      avlHeight: heightOf(avl),
-      rbHeight: heightOf(rb),
-      ...extra,
-    };
-  };
+  ): BalancedState => ({
+    avl,
+    rb,
+    inserted,
+    avlOp,
+    rbOp,
+    avlRots,
+    rbFixes,
+    avlHeight: heightOf(avl),
+    rbHeight: heightOf(rb),
+    phase,
+    ...extra,
+  });
 
   steps.push({
-    state: snap(null, null, null),
+    state: build(null, null, null, null, null, "ok"),
     line: 2,
     note: "Vamos a insertar los mismos valores en un AVL y en un Rojo-Negro, y comparar cómo queda cada uno.",
   });
 
   for (const v of values) {
+    // 1) Cómo quedaría si lo insertáramos como en un BST común, sin arreglar.
+    const avlRoto = avlSnap(avlInsertPlain(cloneAvl(avlRoot), v));
+    const rbRoto = rbSnap(rbInsPlain(cloneRb(rbRoot), v));
+    const avlMal = findAlert(avlRoto);
+    const rbMal = hasAlert(rbRoto);
+
+    // Contadores previos: el paso "roto" todavía no rotó nada.
+    const rotsAntes = avlRots;
+    const fixesAntes = rbFixes;
+
+    // 2) La inserción de verdad, con rebalanceo.
     const avlCtx = { rots: 0, op: null as string | null };
     avlRoot = avlInsert(avlRoot, v, avlCtx);
     avlRots += avlCtx.rots;
-
     const rbCtx = { fixes: 0 };
     rbRoot = rbInsert(rbRoot, v, rbCtx);
     rbFixes += rbCtx.fixes;
 
     const avlOp = avlCtx.op;
-    const rbOp = rbCtx.fixes > 0 ? `${rbCtx.fixes} arreglo(s): sube el del medio, hijos negros` : null;
+    const rbOp = rbCtx.fixes > 0 ? `${rbCtx.fixes} arreglo(s): sube el del medio, sus hijos quedan negros` : null;
+    const huboLio = avlMal !== null || rbMal;
 
-    const partes = [`Insertamos ${v}.`];
-    if (avlOp) partes.push(`AVL: ${avlOp}.`);
-    else partes.push("AVL: no hizo falta rotar.");
-    if (rbOp) partes.push(`Rojo-Negro: ${rbOp}.`);
-    else partes.push("Rojo-Negro: alcanzó con pintarlo.");
-
-    steps.push({
-      state: snap(v, avlOp, rbOp),
-      line: avlOp ? 12 : 24,
-      sound: avlOp || rbOp ? "place" : "tick",
-      note: partes.join(" "),
-    });
+    if (huboLio) {
+      // Paso "roto": se ve el problema antes de corregirlo.
+      const aviso: string[] = [];
+      if (avlMal !== null) aviso.push(`en el AVL el nodo ${avlMal} quedó con factor ±2`);
+      if (rbMal) aviso.push("en el Rojo-Negro quedaron dos rojos seguidos");
+      steps.push({
+        state: build(avlRoto, rbRoto, v, null, null, "roto", {
+          avlRots: rotsAntes,
+          rbFixes: fixesAntes,
+        }),
+        line: 4,
+        sound: "error",
+        note: `Insertamos ${v} como en un BST normal y se rompió la regla: ${aviso.join(" y ")}. Hay que reacomodar.`,
+      });
+      // Paso "ok": el árbol ya reordenado.
+      const arreglo: string[] = [];
+      arreglo.push(avlOp ? `AVL: ${avlOp}` : "AVL: quedó bien sin rotar");
+      arreglo.push(rbOp ? `Rojo-Negro: ${rbOp}` : "Rojo-Negro: alcanzó con recolorear");
+      steps.push({
+        state: build(avlSnap(avlRoot), rbSnap(rbRoot), v, avlOp, rbOp, "ok"),
+        line: avlOp ? 12 : 24,
+        sound: "place",
+        note: `Reacomodado. ${arreglo.join(". ")}.`,
+      });
+    } else {
+      steps.push({
+        state: build(avlSnap(avlRoot), rbSnap(rbRoot), v, null, null, "ok"),
+        line: 4,
+        sound: "tick",
+        note: `Insertamos ${v}: entró en su lugar y ningún nodo rompió la regla, así que no hubo que tocar nada.`,
+      });
+    }
   }
 
   const avlH = heightOf(avlSnap(avlRoot));
@@ -330,7 +416,7 @@ export function generateBalancedSteps(values: number[]): Step<BalancedState>[] {
   }
 
   steps.push({
-    state: snap(null, null, null, { done: true }),
+    state: build(avlSnap(avlRoot), rbSnap(rbRoot), null, null, null, "ok", { done: true }),
     line: 27,
     sound: "found",
     note: `Listo. AVL: altura ${avlH} con ${avlRots} rotaciones. Rojo-Negro: altura ${rbH} con ${rbFixes} arreglos. ${cierre}`,

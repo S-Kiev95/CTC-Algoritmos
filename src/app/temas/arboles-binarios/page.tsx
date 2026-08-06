@@ -71,11 +71,30 @@ const TRAVERSAL_ORDERS: {
   },
 ];
 
+/** Secuencias de ejemplo para la demo de árboles balanceados. */
+const BALANCED_PRESETS = [
+  { label: "creciente", values: BALANCED_VALUES },
+  { label: "desordenada", values: [70, 40, 10, 90, 30, 55, 20, 80, 60] },
+  { label: "corta", values: [70, 40, 10] },
+];
+
 export default function ArbolesBinariosPage() {
   const [demo, setDemo] = useState<DemoKey>("teoria");
   const [searchTarget, setSearchTarget] = useState(60);
   const [traversalOrder, setTraversalOrder] =
     useState<TraversalOrder>("inorder");
+  const [seqText, setSeqText] = useState(BALANCED_VALUES.join(", "));
+
+  // Números separados por coma o espacio; se ignora lo que no sea número.
+  const balancedValues = useMemo(
+    () =>
+      seqText
+        .split(/[\s,]+/)
+        .map((s) => Number(s))
+        .filter((n) => Number.isFinite(n) && n !== 0)
+        .slice(0, 20),
+    [seqText],
+  );
 
   const header = (
     <header className="border-b border-zinc-200 bg-white px-6 py-4 dark:border-zinc-800 dark:bg-zinc-950">
@@ -192,9 +211,29 @@ export default function ArbolesBinariosPage() {
           )}
 
           {demo === "balanceados" && (
-            <span className="font-mono text-xs text-zinc-500">
-              valores = [{BALANCED_VALUES.join(", ")}] — en orden creciente (el peor caso)
-            </span>
+            <div className="flex flex-wrap items-center gap-2">
+              <label className="flex items-center gap-2 text-sm text-zinc-600 dark:text-zinc-400">
+                <span className="font-mono">insertar =</span>
+                <input
+                  value={seqText}
+                  onChange={(e) => setSeqText(e.target.value)}
+                  spellCheck={false}
+                  className="w-56 rounded-md border border-zinc-200 bg-white px-2 py-1 font-mono text-sm text-zinc-900 focus:border-zinc-400 focus:outline-none dark:border-zinc-700 dark:bg-zinc-900 dark:text-zinc-100"
+                />
+              </label>
+              {BALANCED_PRESETS.map((p) => (
+                <button
+                  key={p.label}
+                  onClick={() => setSeqText(p.values.join(", "))}
+                  className="rounded-md border border-zinc-200 px-2 py-1 text-xs text-zinc-600 transition-colors hover:bg-zinc-100 dark:border-zinc-700 dark:text-zinc-300 dark:hover:bg-zinc-800"
+                >
+                  {p.label}
+                </button>
+              ))}
+              <span className="font-mono text-xs text-zinc-500">
+                {balancedValues.length} valores
+              </span>
+            </div>
           )}
         </div>
     </header>
@@ -210,7 +249,9 @@ export default function ArbolesBinariosPage() {
       {demo === "traversal" && (
         <TraversalDemo key={`t-${traversalOrder}`} order={traversalOrder} />
       )}
-      {demo === "balanceados" && <BalancedDemo />}
+      {demo === "balanceados" && (
+        <BalancedDemo key={`b-${balancedValues.join("-")}`} values={balancedValues} />
+      )}
     </ResizableTopicShell>
   );
 }
@@ -546,8 +587,17 @@ function SearchDemo({ target }: { target: number }) {
   );
 }
 
-function BalancedDemo() {
-  const steps = useMemo(() => generateBalancedSteps(BALANCED_VALUES), []);
+function BalancedDemo({ values }: { values: number[] }) {
+  const steps = useMemo(() => generateBalancedSteps(values), [values]);
+  if (values.length === 0) {
+    return (
+      <div className="flex h-full items-center justify-center p-8">
+        <p className="text-sm text-zinc-500">
+          Escribí algunos números (separados por coma) para insertarlos en los dos árboles.
+        </p>
+      </div>
+    );
+  }
   return (
     <AlgorithmPlayer
       code={BALANCED_CODE}
