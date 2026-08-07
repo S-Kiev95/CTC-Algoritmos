@@ -35,7 +35,9 @@ returns void
 language plpgsql
 security definer
 set search_path = public
-as $$
+-- Etiqueta $fn$ en vez de $$: la contraseña empieza con "$" y con $$ el editor
+-- SQL de Supabase corta mal el bloque (error 42P13 "no language specified").
+as $fn$
 begin
   if p_secret is distinct from '$Kiev1995' then
     raise exception 'No autorizado';
@@ -46,7 +48,7 @@ begin
   on conflict (slug)
   do update set visible = excluded.visible, updated_at = now();
 end;
-$$;
+$fn$;
 
 grant execute on function public.set_topic_visibility(text, boolean, text)
   to anon, authenticated;
