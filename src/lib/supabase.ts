@@ -24,13 +24,13 @@
 // El workflow .github/workflows/keep-supabase-awake.yml lee estos mismos
 // valores, así que se actualiza solo y evita que el proyecto se pause.
 
-// project_ref=ekqgmplovhcuqdbvdpkb → URL del proyecto cloud.
-export const SUPABASE_URL = "https://ekqgmplovhcuqdbvdpkb.supabase.co";
+// project_ref=faphirjpdmawzbfdocut → URL del proyecto cloud.
+export const SUPABASE_URL = "https://faphirjpdmawzbfdocut.supabase.co";
 
 // Publishable key (formato nuevo de Supabase). Es pública por diseño: segura
 // de exponer en el bundle. Las escrituras están protegidas por el RPC, no por
 // esta clave.
-export const SUPABASE_ANON_KEY = "sb_publishable_6oY0oASLwX8uUc4zQ1zY6w_4y40rcxa";
+export const SUPABASE_ANON_KEY = "sb_publishable_l8_rrq0m6U1lsDVRnBAc6w_yKpfGnKL";
 
 const REST = `${SUPABASE_URL}/rest/v1`;
 
