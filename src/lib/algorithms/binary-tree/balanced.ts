@@ -425,7 +425,10 @@ export function generateBalancedSteps(values: number[]): Step<BalancedState>[] {
   return steps;
 }
 
-/** Valores de la demo: en orden creciente (el peor caso para un BST común, que
- *  degeneraría en una lista). Con estos diez se ve el intercambio: el AVL queda
- *  de altura 4 rotando 6 veces, y el Rojo-Negro de altura 5 con 5 arreglos. */
-export const BALANCED_VALUES = [10, 20, 30, 40, 50, 60, 70, 80, 90, 100];
+/**
+ * Valores de la demo. Elegidos para que aparezcan **los cuatro casos de
+ * rotación** del AVL (LL, RR, LR y RL) y además se vea el intercambio entre los
+ * dos árboles: el AVL termina de altura 4 con 6 rotaciones y el Rojo-Negro de
+ * altura 5 con 5 arreglos.
+ */
+export const BALANCED_VALUES = [35, 50, 80, 75, 95, 70, 40, 20, 15, 45];

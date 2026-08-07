@@ -71,11 +71,14 @@ const TRAVERSAL_ORDERS: {
   },
 ];
 
-/** Secuencias de ejemplo para la demo de árboles balanceados. */
+/** Secuencias de ejemplo para la demo de árboles balanceados: cada una muestra
+ *  un comportamiento distinto del rebalanceo. */
 const BALANCED_PRESETS = [
-  { label: "creciente", values: BALANCED_VALUES },
-  { label: "desordenada", values: [70, 40, 10, 90, 30, 55, 20, 80, 60] },
-  { label: "corta", values: [70, 40, 10] },
+  { label: "4 rotaciones", values: BALANCED_VALUES },
+  { label: "creciente", values: [10, 20, 30, 40, 50, 60, 70, 80, 90, 100] },
+  { label: "decreciente", values: [100, 90, 80, 70, 60, 50, 40, 30, 20, 10] },
+  { label: "zigzag", values: [50, 10, 40, 20, 30, 90, 60, 80, 70, 25] },
+  { label: "desordenada", values: [70, 40, 10, 90, 30, 55, 20, 80, 60, 15, 45] },
 ];
 
 export default function ArbolesBinariosPage() {
