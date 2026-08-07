@@ -13,6 +13,17 @@
  *   UPDATE directos; el único camino de escritura es el RPC.
  */
 
+// ⬇⬇ PARA MUDAR EL PROYECTO A OTRA CUENTA DE SUPABASE, SOLO SE CAMBIAN ESTAS DOS
+// LÍNEAS ⬇⬇
+//
+// 1. Creá un proyecto nuevo en supabase.com.
+// 2. Corré `supabase/setup.sql` entero en el SQL Editor (crea la tabla, el RPC
+//    y siembra todas las secciones ocultas).
+// 3. Copiá acá la URL y la publishable key desde Project Settings → API.
+//
+// El workflow .github/workflows/keep-supabase-awake.yml lee estos mismos
+// valores, así que se actualiza solo y evita que el proyecto se pause.
+
 // project_ref=ekqgmplovhcuqdbvdpkb → URL del proyecto cloud.
 export const SUPABASE_URL = "https://ekqgmplovhcuqdbvdpkb.supabase.co";
 
