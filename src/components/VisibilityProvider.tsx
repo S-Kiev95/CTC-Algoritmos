@@ -96,8 +96,9 @@ export function VisibilityProvider({ children }: { children: ReactNode }) {
         await setVisibilityRemote(slug, visible, ADMIN_PASSWORD);
       } catch (e: unknown) {
         setVisibility((v) => ({ ...v, [slug]: previous ?? false }));
+        // El panel de profesor muestra este error; no lo relanzamos porque los
+        // botones llaman con `void` y quedaría una promesa rechazada sin manejar.
         setError(e instanceof Error ? e.message : "Error al guardar");
-        throw e;
       }
     },
     [visibility],

@@ -1,7 +1,7 @@
 "use client";
 
 import { useEffect, useRef, useState } from "react";
-import { Lock, LogOut, ShieldCheck, X } from "lucide-react";
+import { AlertTriangle, Lock, LogOut, ShieldCheck, X } from "lucide-react";
 import { useVisibility } from "./VisibilityProvider";
 
 /**
@@ -10,7 +10,7 @@ import { useVisibility } from "./VisibilityProvider";
  * y un botón para salir. Cuando está colapsado el sidebar se reduce a un icono.
  */
 export function AdminControls({ collapsed }: { collapsed: boolean }) {
-  const { isAdmin, logout } = useVisibility();
+  const { isAdmin, logout, error, refresh } = useVisibility();
   const [open, setOpen] = useState(false);
 
   if (isAdmin) {
@@ -20,13 +20,34 @@ export function AdminControls({ collapsed }: { collapsed: boolean }) {
           onClick={logout}
           title="Profesor — cerrar sesión"
           aria-label="Cerrar sesión"
-          className="flex h-8 w-8 items-center justify-center rounded-md text-emerald-600 transition-colors hover:bg-zinc-100 dark:hover:bg-zinc-800"
+          className="relative flex h-8 w-8 items-center justify-center rounded-md text-emerald-600 transition-colors hover:bg-zinc-100 dark:hover:bg-zinc-800"
         >
           <ShieldCheck className="h-4 w-4" />
+          {error && (
+            <span
+              title={error}
+              className="absolute right-0.5 top-0.5 h-2 w-2 rounded-full bg-rose-500"
+            />
+          )}
         </button>
       );
     }
     return (
+      <div className="flex flex-col gap-1.5">
+      {/* Si Supabase falla, el ojo de cada tema "rebota" (vuelve al estado
+          anterior). Sin este aviso no habría forma de saber por qué. */}
+      {error && (
+        <div className="flex items-start gap-1.5 rounded-md border border-rose-300 bg-rose-50 px-2 py-1.5 text-[11px] leading-snug text-rose-800 dark:border-rose-800 dark:bg-rose-950/50 dark:text-rose-200">
+          <AlertTriangle className="mt-0.5 h-3.5 w-3.5 shrink-0" />
+          <div className="min-w-0">
+            <p className="font-semibold">Sin conexión con la base de visibilidad</p>
+            <p className="break-words opacity-80">{error}</p>
+            <button onClick={refresh} className="mt-0.5 font-medium underline underline-offset-2">
+              Reintentar
+            </button>
+          </div>
+        </div>
+      )}
       <div className="flex items-center justify-between gap-2">
         <span className="flex items-center gap-1.5 text-xs font-medium text-emerald-600">
           <ShieldCheck className="h-3.5 w-3.5" />
@@ -39,6 +60,7 @@ export function AdminControls({ collapsed }: { collapsed: boolean }) {
           <LogOut className="h-3.5 w-3.5" />
           Salir
         </button>
+      </div>
       </div>
     );
   }

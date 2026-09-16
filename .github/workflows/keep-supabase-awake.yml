@@ -39,13 +39,19 @@ jobs:
 
       - name: Consultar la base
         run: |
-          code=$(curl -s -o /tmp/out.json -w "%{http_code}" \
+          # Si curl no llega al servidor (p. ej. el dominio no existe) devuelve
+          # un codigo de error; lo capturamos para poder explicar que paso.
+          code=$(curl -s -o /tmp/out.json -w "%{http_code}" --max-time 30 \
             -H "apikey: ${{ steps.cfg.outputs.key }}" \
-            "${{ steps.cfg.outputs.url }}/rest/v1/topic_visibility?select=slug&limit=1")
+            "${{ steps.cfg.outputs.url }}/rest/v1/topic_visibility?select=slug&limit=1") || code="000"
           echo "HTTP $code"
-          cat /tmp/out.json
+          cat /tmp/out.json 2>/dev/null || true
+          if [ "$code" = "000" ]; then
+            echo "::error::No se pudo conectar: el dominio del proyecto no responde. Probablemente fue pausado o eliminado, revisalo en supabase.com."
+            exit 1
+          fi
           if [ "$code" != "200" ]; then
-            echo "::error::Supabase no respondió 200 — puede estar pausado o la key cambió."
+            echo "::error::Supabase respondio HTTP $code. Puede que la key haya cambiado."
             exit 1
           fi
           echo "Proyecto activo."

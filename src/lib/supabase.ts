@@ -44,11 +44,27 @@ function baseHeaders(): HeadersInit {
 export type VisibilityMap = Record<string, boolean>;
 
 /**
+ * `fetch` que traduce los errores de red (el navegador ni siquiera llegó al
+ * servidor) a un mensaje entendible. Pasa, por ejemplo, cuando el proyecto de
+ * Supabase fue pausado o eliminado y su dominio deja de existir.
+ */
+async function fetchSupabase(url: string, init: RequestInit): Promise<Response> {
+  try {
+    return await fetch(url, init);
+  } catch {
+    throw new Error(
+      "No se pudo conectar con Supabase. Revisá en supabase.com que el proyecto " +
+        "no esté pausado o eliminado.",
+    );
+  }
+}
+
+/**
  * Trae el estado de visibilidad de todos los temas. Devuelve un mapa
  * slug → visible. Si un slug no tiene fila, se considera oculto.
  */
 export async function fetchVisibility(): Promise<VisibilityMap> {
-  const res = await fetch(`${REST}/topic_visibility?select=slug,visible`, {
+  const res = await fetchSupabase(`${REST}/topic_visibility?select=slug,visible`, {
     headers: baseHeaders(),
     // Siempre queremos el estado fresco: el profesor puede haber cambiado algo.
     cache: "no-store",
@@ -72,7 +88,7 @@ export async function setVisibilityRemote(
   visible: boolean,
   secret: string,
 ): Promise<void> {
-  const res = await fetch(`${REST}/rpc/set_topic_visibility`, {
+  const res = await fetchSupabase(`${REST}/rpc/set_topic_visibility`, {
     method: "POST",
     headers: {
       ...baseHeaders(),
