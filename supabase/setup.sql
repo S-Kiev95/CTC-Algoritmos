@@ -82,6 +82,7 @@ insert into public.topic_visibility (slug, visible) values
   ('ej:8-reinas',          false),
   ('ej:8-reinas:sol',      false),
   ('ej:laberinto-kruskal', false),
+  ('ej:laberinto-prim',    false),
   ('ej:graham',            false),
   ('ej:graham:sol',        false),
   -- Secciones de algoritmos
@@ -108,5 +109,10 @@ insert into public.topic_visibility (slug, visible) values
   ('lib:pygame',           false)
 on conflict (slug) do nothing;
 
--- 5) Chequeo: deberías ver 38 filas.
+-- 5) Tarea diaria (pg_cron): todos los días a las 12:00 UTC le pide la fecha
+--    a la base. Si ya existe, la vuelve a programar igual.
+create extension if not exists pg_cron with schema pg_catalog;
+select cron.schedule('consulta-diaria', '0 12 * * *', 'select now()');
+
+-- 6) Chequeo: deberías ver 39 filas.
 select count(*) as secciones_registradas from public.topic_visibility;

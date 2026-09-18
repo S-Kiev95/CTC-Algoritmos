@@ -1,4 +1,4 @@
-import { Crown, Grid3x3, Hexagon, type LucideIcon } from "lucide-react";
+import { Crown, Grid3x3, Hexagon, Sprout, type LucideIcon } from "lucide-react";
 
 /**
  * Metadata de los ejercicios prácticos.
@@ -46,6 +46,15 @@ export const EXERCISES: Exercise[] = [
     icon: Grid3x3,
     kind: "demo",
     visibilitySlug: "ej:laberinto-kruskal",
+    ready: true,
+  },
+  {
+    slug: "laberinto-prim",
+    title: "Laberinto (Prim)",
+    short: "Generar un laberinto que crece desde una celda",
+    icon: Sprout,
+    kind: "demo",
+    visibilitySlug: "ej:laberinto-prim",
     ready: true,
   },
   {
