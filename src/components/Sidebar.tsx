@@ -13,8 +13,6 @@ import {
   Dumbbell,
   Fence,
   Ghost,
-  Eye,
-  EyeOff,
   Home,
   Library,
   Lightbulb,
@@ -28,11 +26,9 @@ import {
 import { useEffect, useState } from "react";
 import { TOPICS } from "@/lib/topics";
 import { PYTHON_POINTS } from "@/lib/python/points";
-import { EXERCISES, EXERCISES_SECTION_SLUG } from "@/lib/ejercicios/exercises";
-import { CITIES, MAPS_SECTION_SLUG } from "@/lib/mapas/cities";
-import { LIBRARIES, LIBRARIES_SECTION_SLUG } from "@/lib/librerias/libraries";
-import { useVisibility } from "./VisibilityProvider";
-import { AdminControls } from "./AdminControls";
+import { EXERCISES } from "@/lib/ejercicios/exercises";
+import { CITIES } from "@/lib/mapas/cities";
+import { LIBRARIES } from "@/lib/librerias/libraries";
 
 const STORAGE_KEY = "sidebar-collapsed";
 
@@ -40,17 +36,11 @@ const STORAGE_KEY = "sidebar-collapsed";
  * Sidebar con colapso persistente en localStorage. Cuando está colapsado
  * solo se ven los iconos — el resto del layout (main flex-1) se ensancha
  * automáticamente al cambiar la width del aside.
- *
- * La lista de temas se filtra según la visibilidad: los estudiantes solo ven
- * los temas habilitados; el profesor (logueado) ve todos, con un toggle para
- * mostrar/ocultar cada uno.
  */
 export function Sidebar() {
   const pathname = usePathname();
   const isHome = pathname === "/";
   const [collapsed, setCollapsed] = useState(false);
-
-  const { isAdmin, canSee, loading, toggleTopic, visibility } = useVisibility();
 
   // Cargar preferencia (efecto solo en cliente, evita mismatch de SSR)
   useEffect(() => {
@@ -65,9 +55,6 @@ export function Sidebar() {
       return next;
     });
   }
-
-  // El profesor ve todos; el estudiante solo los habilitados.
-  const visibleTopics = isAdmin ? TOPICS : TOPICS.filter((t) => canSee(t.slug));
 
   return (
     <aside
@@ -146,24 +133,13 @@ export function Sidebar() {
             <div className="my-3 border-t border-zinc-200 dark:border-zinc-800" />
           )}
 
-          {/* Estado de carga / vacío para estudiantes */}
-          {!isAdmin && loading && !collapsed && (
-            <p className="mt-2 px-3 text-xs text-zinc-400">Cargando temas…</p>
-          )}
-          {!isAdmin && !loading && visibleTopics.length === 0 && !collapsed && (
-            <p className="mt-2 px-3 text-xs text-zinc-400">
-              Todavía no hay temas habilitados.
-            </p>
-          )}
-
           <ul
             className={["space-y-0.5", collapsed ? "mt-0" : "mt-1.5"].join(" ")}
           >
-            {visibleTopics.map((topic) => {
+            {TOPICS.map((topic) => {
               const href = `/temas/${topic.slug}`;
               const active = pathname.startsWith(href);
               const Icon = topic.icon;
-              const isVisible = visibility[topic.slug] === true;
               return (
                 <li key={topic.slug} className="flex items-center gap-1">
                   <SidebarLink
@@ -172,44 +148,14 @@ export function Sidebar() {
                     label={topic.title}
                     active={active}
                     collapsed={collapsed}
-                    // En modo profesor atenuamos los temas ocultos.
-                    dimmed={isAdmin && !isVisible}
                     className="flex-1"
                   />
-                  {isAdmin && !collapsed && (
-                    <button
-                      onClick={() => void toggleTopic(topic.slug, !isVisible)}
-                      title={isVisible ? "Ocultar a estudiantes" : "Mostrar a estudiantes"}
-                      aria-label={isVisible ? "Ocultar tema" : "Mostrar tema"}
-                      className={[
-                        "flex h-8 w-8 shrink-0 items-center justify-center rounded-md transition-colors",
-                        isVisible
-                          ? "text-emerald-600 hover:bg-emerald-50 dark:hover:bg-emerald-950/40"
-                          : "text-zinc-400 hover:bg-zinc-100 dark:hover:bg-zinc-800",
-                      ].join(" ")}
-                    >
-                      {isVisible ? (
-                        <Eye className="h-4 w-4" />
-                      ) : (
-                        <EyeOff className="h-4 w-4" />
-                      )}
-                    </button>
-                  )}
                 </li>
               );
             })}
           </ul>
         </nav>
 
-        {/* Pie: control de acceso de profesor */}
-        <div
-          className={[
-            "border-t border-zinc-200 dark:border-zinc-800",
-            collapsed ? "flex justify-center px-2 py-3" : "px-5 py-3",
-          ].join(" ")}
-        >
-          <AdminControls collapsed={collapsed} />
-        </div>
       </div>
     </aside>
   );
@@ -221,7 +167,6 @@ function SidebarLink({
   label,
   active,
   collapsed,
-  dimmed = false,
   className = "",
 }: {
   href: string;
@@ -229,7 +174,6 @@ function SidebarLink({
   label: string;
   active: boolean;
   collapsed: boolean;
-  dimmed?: boolean;
   className?: string;
 }) {
   const baseClasses = [
@@ -238,7 +182,6 @@ function SidebarLink({
       ? "bg-zinc-100 font-medium text-zinc-900 dark:bg-zinc-800 dark:text-zinc-50"
       : "text-zinc-600 hover:bg-zinc-50 hover:text-zinc-900 dark:text-zinc-400 dark:hover:bg-zinc-900 dark:hover:text-zinc-100",
     collapsed ? "justify-center px-2 py-2" : "gap-2.5 px-3 py-2",
-    dimmed ? "opacity-40" : "",
     className,
   ].join(" ");
 
@@ -253,14 +196,10 @@ function SidebarLink({
 const PY_GROUP_KEY = "python-group-open";
 
 /**
- * Grupo "Python" desplegable en el sidebar. Toda la sección se controla con un
- * único slug de visibilidad: `python`. El estudiante solo ve el grupo si está
- * habilitado; el profesor lo ve siempre, atenuado si está oculto, con un toggle
- * 👁 en el header.
+ * Grupo "Python" desplegable en el sidebar.
  */
 function PythonGroup({ collapsed }: { collapsed: boolean }) {
   const pathname = usePathname();
-  const { isAdmin, canSee, visibility, toggleTopic } = useVisibility();
   const [open, setOpen] = useState(true);
 
   useEffect(() => {
@@ -268,12 +207,8 @@ function PythonGroup({ collapsed }: { collapsed: boolean }) {
     if (saved === "false") setOpen(false);
   }, []);
 
-  // El estudiante no ve nada si la sección está oculta.
-  if (!isAdmin && !canSee("python")) return null;
 
   const sectionActive = pathname.startsWith("/python");
-  const isVisible = visibility["python"] === true;
-  const dimmed = isAdmin && !isVisible;
 
   // Sidebar colapsado: solo un icono que linkea al landing.
   if (collapsed) {
@@ -287,7 +222,6 @@ function PythonGroup({ collapsed }: { collapsed: boolean }) {
             sectionActive
               ? "bg-zinc-100 text-zinc-900 dark:bg-zinc-800 dark:text-zinc-50"
               : "text-zinc-600 hover:bg-zinc-50 hover:text-zinc-900 dark:text-zinc-400 dark:hover:bg-zinc-900",
-            dimmed ? "opacity-40" : "",
           ].join(" ")}
         >
           <Code2 className="h-4 w-4" />
@@ -304,7 +238,7 @@ function PythonGroup({ collapsed }: { collapsed: boolean }) {
   }
 
   return (
-    <div className={["mt-3", dimmed ? "opacity-50" : ""].join(" ")}>
+    <div className="mt-3">
       <div className="flex items-center gap-1">
         <button
           onClick={toggleOpen}
@@ -324,25 +258,6 @@ function PythonGroup({ collapsed }: { collapsed: boolean }) {
             <ChevronRight className="h-4 w-4 text-zinc-400" />
           )}
         </button>
-        {isAdmin && (
-          <button
-            onClick={() => void toggleTopic("python", !isVisible)}
-            title={isVisible ? "Ocultar a estudiantes" : "Mostrar a estudiantes"}
-            aria-label={isVisible ? "Ocultar Python" : "Mostrar Python"}
-            className={[
-              "flex h-8 w-8 shrink-0 items-center justify-center rounded-md transition-colors",
-              isVisible
-                ? "text-emerald-600 hover:bg-emerald-50 dark:hover:bg-emerald-950/40"
-                : "text-zinc-400 hover:bg-zinc-100 dark:hover:bg-zinc-800",
-            ].join(" ")}
-          >
-            {isVisible ? (
-              <Eye className="h-4 w-4" />
-            ) : (
-              <EyeOff className="h-4 w-4" />
-            )}
-          </button>
-        )}
       </div>
 
       {open && (
@@ -392,14 +307,10 @@ function PythonGroup({ collapsed }: { collapsed: boolean }) {
 const EJ_GROUP_KEY = "ejercicios-group-open";
 
 /**
- * Grupo "Ejercicios prácticos" en el sidebar. Visibilidad en 3 niveles: la
- * sección (slug `ejercicios`), cada ejercicio (slug `ej:<x>`) y —dentro de la
- * página— la solución. Acá manejamos los dos primeros: el grupo y el toggle 👁
- * por ejercicio (solo profe).
+ * Grupo "Ejercicios prácticos" en el sidebar.
  */
 function EjerciciosGroup({ collapsed }: { collapsed: boolean }) {
   const pathname = usePathname();
-  const { isAdmin, canSee, visibility, toggleTopic } = useVisibility();
   const [open, setOpen] = useState(true);
 
   useEffect(() => {
@@ -407,15 +318,9 @@ function EjerciciosGroup({ collapsed }: { collapsed: boolean }) {
     if (saved === "false") setOpen(false);
   }, []);
 
-  if (!isAdmin && !canSee(EXERCISES_SECTION_SLUG)) return null;
 
   const sectionActive = pathname.startsWith("/ejercicios");
-  const sectionVisible = visibility[EXERCISES_SECTION_SLUG] === true;
-  const dimmed = isAdmin && !sectionVisible;
 
-  const items = isAdmin
-    ? EXERCISES
-    : EXERCISES.filter((e) => canSee(e.visibilitySlug));
 
   if (collapsed) {
     return (
@@ -424,11 +329,10 @@ function EjerciciosGroup({ collapsed }: { collapsed: boolean }) {
           href="/ejercicios"
           title="Ejercicios prácticos"
           className={[
-            "flex h-9 w-full items-center justify-center rounded-md transition-colors",
+            "flex h-9 w-full EXERCISES-center justify-center rounded-md transition-colors",
             sectionActive
               ? "bg-zinc-100 text-zinc-900 dark:bg-zinc-800 dark:text-zinc-50"
               : "text-zinc-600 hover:bg-zinc-50 hover:text-zinc-900 dark:text-zinc-400 dark:hover:bg-zinc-900",
-            dimmed ? "opacity-40" : "",
           ].join(" ")}
         >
           <Dumbbell className="h-4 w-4" />
@@ -445,13 +349,13 @@ function EjerciciosGroup({ collapsed }: { collapsed: boolean }) {
   }
 
   return (
-    <div className={["mt-1", dimmed ? "opacity-50" : ""].join(" ")}>
-      <div className="flex items-center gap-1">
+    <div className="mt-1">
+      <div className="flex EXERCISES-center gap-1">
         <button
           onClick={toggleOpen}
           aria-expanded={open}
           className={[
-            "flex flex-1 items-center gap-2 rounded-md px-3 py-2 text-sm font-medium transition-colors",
+            "flex flex-1 EXERCISES-center gap-2 rounded-md px-3 py-2 text-sm font-medium transition-colors",
             sectionActive
               ? "text-zinc-900 dark:text-zinc-50"
               : "text-zinc-700 hover:bg-zinc-50 hover:text-zinc-900 dark:text-zinc-300 dark:hover:bg-zinc-900",
@@ -465,41 +369,21 @@ function EjerciciosGroup({ collapsed }: { collapsed: boolean }) {
             <ChevronRight className="h-4 w-4 text-zinc-400" />
           )}
         </button>
-        {isAdmin && (
-          <button
-            onClick={() => void toggleTopic(EXERCISES_SECTION_SLUG, !sectionVisible)}
-            title={sectionVisible ? "Ocultar a estudiantes" : "Mostrar a estudiantes"}
-            aria-label={sectionVisible ? "Ocultar Ejercicios" : "Mostrar Ejercicios"}
-            className={[
-              "flex h-8 w-8 shrink-0 items-center justify-center rounded-md transition-colors",
-              sectionVisible
-                ? "text-emerald-600 hover:bg-emerald-50 dark:hover:bg-emerald-950/40"
-                : "text-zinc-400 hover:bg-zinc-100 dark:hover:bg-zinc-800",
-            ].join(" ")}
-          >
-            {sectionVisible ? (
-              <Eye className="h-4 w-4" />
-            ) : (
-              <EyeOff className="h-4 w-4" />
-            )}
-          </button>
-        )}
       </div>
 
       {open && (
         <ul className="mt-0.5 space-y-0.5 border-l border-zinc-200 pl-3 dark:border-zinc-800">
-          {items.map((ex) => {
+          {EXERCISES.map((ex) => {
             const href = `/ejercicios/${ex.slug}`;
             const active = pathname.startsWith(href);
             const Icon = ex.icon;
-            const itemVisible = visibility[ex.visibilitySlug] === true;
 
             if (!ex.ready) {
               return (
                 <li
                   key={ex.slug}
                   title="Próximamente"
-                  className="flex cursor-not-allowed items-center gap-2.5 rounded-md px-3 py-2 text-sm text-zinc-400 dark:text-zinc-600"
+                  className="flex cursor-not-allowed EXERCISES-center gap-2.5 rounded-md px-3 py-2 text-sm text-zinc-400 dark:text-zinc-600"
                 >
                   <Icon className="h-4 w-4 shrink-0" />
                   <span className="flex-1 truncate">{ex.title}</span>
@@ -509,39 +393,19 @@ function EjerciciosGroup({ collapsed }: { collapsed: boolean }) {
             }
 
             return (
-              <li key={ex.slug} className="flex items-center gap-1">
+              <li key={ex.slug} className="flex EXERCISES-center gap-1">
                 <Link
                   href={href}
                   className={[
-                    "flex flex-1 items-center gap-2.5 rounded-md px-3 py-2 text-sm transition-colors",
+                    "flex flex-1 EXERCISES-center gap-2.5 rounded-md px-3 py-2 text-sm transition-colors",
                     active
                       ? "bg-zinc-100 font-medium text-zinc-900 dark:bg-zinc-800 dark:text-zinc-50"
                       : "text-zinc-600 hover:bg-zinc-50 hover:text-zinc-900 dark:text-zinc-400 dark:hover:bg-zinc-900 dark:hover:text-zinc-100",
-                    isAdmin && !itemVisible ? "opacity-40" : "",
                   ].join(" ")}
                 >
                   <Icon className="h-4 w-4 shrink-0" />
                   <span className="truncate">{ex.title}</span>
                 </Link>
-                {isAdmin && (
-                  <button
-                    onClick={() => void toggleTopic(ex.visibilitySlug, !itemVisible)}
-                    title={itemVisible ? "Ocultar ejercicio" : "Mostrar ejercicio"}
-                    aria-label={itemVisible ? "Ocultar ejercicio" : "Mostrar ejercicio"}
-                    className={[
-                      "flex h-8 w-8 shrink-0 items-center justify-center rounded-md transition-colors",
-                      itemVisible
-                        ? "text-emerald-600 hover:bg-emerald-50 dark:hover:bg-emerald-950/40"
-                        : "text-zinc-400 hover:bg-zinc-100 dark:hover:bg-zinc-800",
-                    ].join(" ")}
-                  >
-                    {itemVisible ? (
-                      <Eye className="h-4 w-4" />
-                    ) : (
-                      <EyeOff className="h-4 w-4" />
-                    )}
-                  </button>
-                )}
               </li>
             );
           })}
@@ -553,17 +417,12 @@ function EjerciciosGroup({ collapsed }: { collapsed: boolean }) {
 
 /**
  * Link simple "Recorrer laberinto" (una sola página con pestañas, sin acordeón).
- * Gateado por el slug `recorrido`; el profe lo ve siempre con un toggle 👁.
  */
 function RecorridoLink({ collapsed }: { collapsed: boolean }) {
   const pathname = usePathname();
-  const { isAdmin, canSee, visibility, toggleTopic } = useVisibility();
 
-  if (!isAdmin && !canSee("recorrido")) return null;
 
   const active = pathname.startsWith("/recorrido");
-  const isVisible = visibility["recorrido"] === true;
-  const dimmed = isAdmin && !isVisible;
 
   if (collapsed) {
     return (
@@ -576,7 +435,6 @@ function RecorridoLink({ collapsed }: { collapsed: boolean }) {
             active
               ? "bg-zinc-100 text-zinc-900 dark:bg-zinc-800 dark:text-zinc-50"
               : "text-zinc-600 hover:bg-zinc-50 hover:text-zinc-900 dark:text-zinc-400 dark:hover:bg-zinc-900",
-            dimmed ? "opacity-40" : "",
           ].join(" ")}
         >
           <Route className="h-4 w-4" />
@@ -586,7 +444,7 @@ function RecorridoLink({ collapsed }: { collapsed: boolean }) {
   }
 
   return (
-    <div className={["mt-1 flex items-center gap-1", dimmed ? "opacity-50" : ""].join(" ")}>
+    <div className="mt-1 flex items-center gap-1">
       <Link
         href="/recorrido"
         className={[
@@ -599,31 +457,15 @@ function RecorridoLink({ collapsed }: { collapsed: boolean }) {
         <Route className="h-4 w-4 shrink-0" />
         <span className="flex-1">Recorrer laberinto</span>
       </Link>
-      {isAdmin && (
-        <button
-          onClick={() => void toggleTopic("recorrido", !isVisible)}
-          title={isVisible ? "Ocultar a estudiantes" : "Mostrar a estudiantes"}
-          aria-label={isVisible ? "Ocultar recorrido" : "Mostrar recorrido"}
-          className={[
-            "flex h-8 w-8 shrink-0 items-center justify-center rounded-md transition-colors",
-            isVisible
-              ? "text-emerald-600 hover:bg-emerald-50 dark:hover:bg-emerald-950/40"
-              : "text-zinc-400 hover:bg-zinc-100 dark:hover:bg-zinc-800",
-          ].join(" ")}
-        >
-          {isVisible ? <Eye className="h-4 w-4" /> : <EyeOff className="h-4 w-4" />}
-        </button>
-      )}
     </div>
   );
 }
 
 const MAPS_GROUP_KEY = "mapas-group-open";
 
-/** Grupo "Mapas" en el sidebar: sección `mapas` + cada ciudad `mapa:<slug>`. */
+/** Grupo "Mapas" en el sidebar: una entrada por ciudad. */
 function MapasGroup({ collapsed }: { collapsed: boolean }) {
   const pathname = usePathname();
-  const { isAdmin, canSee, visibility, toggleTopic } = useVisibility();
   const [open, setOpen] = useState(true);
 
   useEffect(() => {
@@ -631,12 +473,8 @@ function MapasGroup({ collapsed }: { collapsed: boolean }) {
     if (saved === "false") setOpen(false);
   }, []);
 
-  if (!isAdmin && !canSee(MAPS_SECTION_SLUG)) return null;
 
   const sectionActive = pathname.startsWith("/mapas");
-  const sectionVisible = visibility[MAPS_SECTION_SLUG] === true;
-  const dimmed = isAdmin && !sectionVisible;
-  const items = isAdmin ? CITIES : CITIES.filter((c) => canSee(c.visibilitySlug));
 
   if (collapsed) {
     return (
@@ -645,11 +483,10 @@ function MapasGroup({ collapsed }: { collapsed: boolean }) {
           href="/mapas"
           title="Mapas"
           className={[
-            "flex h-9 w-full items-center justify-center rounded-md transition-colors",
+            "flex h-9 w-full CITIES-center justify-center rounded-md transition-colors",
             sectionActive
               ? "bg-zinc-100 text-zinc-900 dark:bg-zinc-800 dark:text-zinc-50"
               : "text-zinc-600 hover:bg-zinc-50 hover:text-zinc-900 dark:text-zinc-400 dark:hover:bg-zinc-900",
-            dimmed ? "opacity-40" : "",
           ].join(" ")}
         >
           <MapIcon className="h-4 w-4" />
@@ -666,13 +503,13 @@ function MapasGroup({ collapsed }: { collapsed: boolean }) {
   }
 
   return (
-    <div className={["mt-1", dimmed ? "opacity-50" : ""].join(" ")}>
-      <div className="flex items-center gap-1">
+    <div className="mt-1">
+      <div className="flex CITIES-center gap-1">
         <button
           onClick={toggleOpen}
           aria-expanded={open}
           className={[
-            "flex flex-1 items-center gap-2 rounded-md px-3 py-2 text-sm font-medium transition-colors",
+            "flex flex-1 CITIES-center gap-2 rounded-md px-3 py-2 text-sm font-medium transition-colors",
             sectionActive
               ? "text-zinc-900 dark:text-zinc-50"
               : "text-zinc-700 hover:bg-zinc-50 hover:text-zinc-900 dark:text-zinc-300 dark:hover:bg-zinc-900",
@@ -686,37 +523,21 @@ function MapasGroup({ collapsed }: { collapsed: boolean }) {
             <ChevronRight className="h-4 w-4 text-zinc-400" />
           )}
         </button>
-        {isAdmin && (
-          <button
-            onClick={() => void toggleTopic(MAPS_SECTION_SLUG, !sectionVisible)}
-            title={sectionVisible ? "Ocultar a estudiantes" : "Mostrar a estudiantes"}
-            aria-label={sectionVisible ? "Ocultar Mapas" : "Mostrar Mapas"}
-            className={[
-              "flex h-8 w-8 shrink-0 items-center justify-center rounded-md transition-colors",
-              sectionVisible
-                ? "text-emerald-600 hover:bg-emerald-50 dark:hover:bg-emerald-950/40"
-                : "text-zinc-400 hover:bg-zinc-100 dark:hover:bg-zinc-800",
-            ].join(" ")}
-          >
-            {sectionVisible ? <Eye className="h-4 w-4" /> : <EyeOff className="h-4 w-4" />}
-          </button>
-        )}
       </div>
 
       {open && (
         <ul className="mt-0.5 space-y-0.5 border-l border-zinc-200 pl-3 dark:border-zinc-800">
-          {items.map((c) => {
+          {CITIES.map((c) => {
             const href = `/mapas/${c.slug}`;
             const active = pathname.startsWith(href);
             const Icon = c.icon;
-            const itemVisible = visibility[c.visibilitySlug] === true;
 
             if (!c.ready) {
               return (
                 <li
                   key={c.slug}
                   title="Próximamente"
-                  className="flex cursor-not-allowed items-center gap-2.5 rounded-md px-3 py-2 text-sm text-zinc-400 dark:text-zinc-600"
+                  className="flex cursor-not-allowed CITIES-center gap-2.5 rounded-md px-3 py-2 text-sm text-zinc-400 dark:text-zinc-600"
                 >
                   <Icon className="h-4 w-4 shrink-0" />
                   <span className="flex-1 truncate">{c.title}</span>
@@ -726,35 +547,19 @@ function MapasGroup({ collapsed }: { collapsed: boolean }) {
             }
 
             return (
-              <li key={c.slug} className="flex items-center gap-1">
+              <li key={c.slug} className="flex CITIES-center gap-1">
                 <Link
                   href={href}
                   className={[
-                    "flex flex-1 items-center gap-2.5 rounded-md px-3 py-2 text-sm transition-colors",
+                    "flex flex-1 CITIES-center gap-2.5 rounded-md px-3 py-2 text-sm transition-colors",
                     active
                       ? "bg-zinc-100 font-medium text-zinc-900 dark:bg-zinc-800 dark:text-zinc-50"
                       : "text-zinc-600 hover:bg-zinc-50 hover:text-zinc-900 dark:text-zinc-400 dark:hover:bg-zinc-900 dark:hover:text-zinc-100",
-                    isAdmin && !itemVisible ? "opacity-40" : "",
                   ].join(" ")}
                 >
                   <Icon className="h-4 w-4 shrink-0" />
                   <span className="truncate">{c.title}</span>
                 </Link>
-                {isAdmin && (
-                  <button
-                    onClick={() => void toggleTopic(c.visibilitySlug, !itemVisible)}
-                    title={itemVisible ? "Ocultar ciudad" : "Mostrar ciudad"}
-                    aria-label={itemVisible ? "Ocultar ciudad" : "Mostrar ciudad"}
-                    className={[
-                      "flex h-8 w-8 shrink-0 items-center justify-center rounded-md transition-colors",
-                      itemVisible
-                        ? "text-emerald-600 hover:bg-emerald-50 dark:hover:bg-emerald-950/40"
-                        : "text-zinc-400 hover:bg-zinc-100 dark:hover:bg-zinc-800",
-                    ].join(" ")}
-                  >
-                    {itemVisible ? <Eye className="h-4 w-4" /> : <EyeOff className="h-4 w-4" />}
-                  </button>
-                )}
               </li>
             );
           })}
@@ -766,10 +571,9 @@ function MapasGroup({ collapsed }: { collapsed: boolean }) {
 
 const LIBS_GROUP_KEY = "librerias-group-open";
 
-/** Grupo "Librerías" en el sidebar: sección `librerias` + cada lib `lib:<slug>`. */
+/** Grupo "Librerías" en el sidebar: una entrada por librería. */
 function LibreriasGroup({ collapsed }: { collapsed: boolean }) {
   const pathname = usePathname();
-  const { isAdmin, canSee, visibility, toggleTopic } = useVisibility();
   const [open, setOpen] = useState(true);
 
   useEffect(() => {
@@ -777,14 +581,8 @@ function LibreriasGroup({ collapsed }: { collapsed: boolean }) {
     if (saved === "false") setOpen(false);
   }, []);
 
-  if (!isAdmin && !canSee(LIBRARIES_SECTION_SLUG)) return null;
 
   const sectionActive = pathname.startsWith("/librerias");
-  const sectionVisible = visibility[LIBRARIES_SECTION_SLUG] === true;
-  const dimmed = isAdmin && !sectionVisible;
-  const items = isAdmin
-    ? LIBRARIES
-    : LIBRARIES.filter((l) => canSee(l.visibilitySlug));
 
   if (collapsed) {
     return (
@@ -793,11 +591,10 @@ function LibreriasGroup({ collapsed }: { collapsed: boolean }) {
           href="/librerias"
           title="Librerías"
           className={[
-            "flex h-9 w-full items-center justify-center rounded-md transition-colors",
+            "flex h-9 w-full LIBRARIES-center justify-center rounded-md transition-colors",
             sectionActive
               ? "bg-zinc-100 text-zinc-900 dark:bg-zinc-800 dark:text-zinc-50"
               : "text-zinc-600 hover:bg-zinc-50 hover:text-zinc-900 dark:text-zinc-400 dark:hover:bg-zinc-900",
-            dimmed ? "opacity-40" : "",
           ].join(" ")}
         >
           <Library className="h-4 w-4" />
@@ -814,13 +611,13 @@ function LibreriasGroup({ collapsed }: { collapsed: boolean }) {
   }
 
   return (
-    <div className={["mt-1", dimmed ? "opacity-50" : ""].join(" ")}>
-      <div className="flex items-center gap-1">
+    <div className="mt-1">
+      <div className="flex LIBRARIES-center gap-1">
         <button
           onClick={toggleOpen}
           aria-expanded={open}
           className={[
-            "flex flex-1 items-center gap-2 rounded-md px-3 py-2 text-sm font-medium transition-colors",
+            "flex flex-1 LIBRARIES-center gap-2 rounded-md px-3 py-2 text-sm font-medium transition-colors",
             sectionActive
               ? "text-zinc-900 dark:text-zinc-50"
               : "text-zinc-700 hover:bg-zinc-50 hover:text-zinc-900 dark:text-zinc-300 dark:hover:bg-zinc-900",
@@ -834,37 +631,21 @@ function LibreriasGroup({ collapsed }: { collapsed: boolean }) {
             <ChevronRight className="h-4 w-4 text-zinc-400" />
           )}
         </button>
-        {isAdmin && (
-          <button
-            onClick={() => void toggleTopic(LIBRARIES_SECTION_SLUG, !sectionVisible)}
-            title={sectionVisible ? "Ocultar a estudiantes" : "Mostrar a estudiantes"}
-            aria-label={sectionVisible ? "Ocultar Librerías" : "Mostrar Librerías"}
-            className={[
-              "flex h-8 w-8 shrink-0 items-center justify-center rounded-md transition-colors",
-              sectionVisible
-                ? "text-emerald-600 hover:bg-emerald-50 dark:hover:bg-emerald-950/40"
-                : "text-zinc-400 hover:bg-zinc-100 dark:hover:bg-zinc-800",
-            ].join(" ")}
-          >
-            {sectionVisible ? <Eye className="h-4 w-4" /> : <EyeOff className="h-4 w-4" />}
-          </button>
-        )}
       </div>
 
       {open && (
         <ul className="mt-0.5 space-y-0.5 border-l border-zinc-200 pl-3 dark:border-zinc-800">
-          {items.map((l) => {
+          {LIBRARIES.map((l) => {
             const href = `/librerias/${l.slug}`;
             const active = pathname.startsWith(href);
             const Icon = l.icon;
-            const itemVisible = visibility[l.visibilitySlug] === true;
 
             if (!l.ready) {
               return (
                 <li
                   key={l.slug}
                   title="Próximamente"
-                  className="flex cursor-not-allowed items-center gap-2.5 rounded-md px-3 py-2 text-sm text-zinc-400 dark:text-zinc-600"
+                  className="flex cursor-not-allowed LIBRARIES-center gap-2.5 rounded-md px-3 py-2 text-sm text-zinc-400 dark:text-zinc-600"
                 >
                   <Icon className="h-4 w-4 shrink-0" />
                   <span className="flex-1 truncate">{l.title}</span>
@@ -874,35 +655,19 @@ function LibreriasGroup({ collapsed }: { collapsed: boolean }) {
             }
 
             return (
-              <li key={l.slug} className="flex items-center gap-1">
+              <li key={l.slug} className="flex LIBRARIES-center gap-1">
                 <Link
                   href={href}
                   className={[
-                    "flex flex-1 items-center gap-2.5 rounded-md px-3 py-2 text-sm transition-colors",
+                    "flex flex-1 LIBRARIES-center gap-2.5 rounded-md px-3 py-2 text-sm transition-colors",
                     active
                       ? "bg-zinc-100 font-medium text-zinc-900 dark:bg-zinc-800 dark:text-zinc-50"
                       : "text-zinc-600 hover:bg-zinc-50 hover:text-zinc-900 dark:text-zinc-400 dark:hover:bg-zinc-900 dark:hover:text-zinc-100",
-                    isAdmin && !itemVisible ? "opacity-40" : "",
                   ].join(" ")}
                 >
                   <Icon className="h-4 w-4 shrink-0" />
                   <span className="truncate">{l.title}</span>
                 </Link>
-                {isAdmin && (
-                  <button
-                    onClick={() => void toggleTopic(l.visibilitySlug, !itemVisible)}
-                    title={itemVisible ? "Ocultar librería" : "Mostrar librería"}
-                    aria-label={itemVisible ? "Ocultar librería" : "Mostrar librería"}
-                    className={[
-                      "flex h-8 w-8 shrink-0 items-center justify-center rounded-md transition-colors",
-                      itemVisible
-                        ? "text-emerald-600 hover:bg-emerald-50 dark:hover:bg-emerald-950/40"
-                        : "text-zinc-400 hover:bg-zinc-100 dark:hover:bg-zinc-800",
-                    ].join(" ")}
-                  >
-                    {itemVisible ? <Eye className="h-4 w-4" /> : <EyeOff className="h-4 w-4" />}
-                  </button>
-                )}
               </li>
             );
           })}
@@ -912,16 +677,12 @@ function LibreriasGroup({ collapsed }: { collapsed: boolean }) {
   );
 }
 
-/** Link simple "Minimax" (una página con pestañas). Gateado por `minimax`. */
+/** Link simple "Minimax" (una página con pestañas). */
 function MinimaxLink({ collapsed }: { collapsed: boolean }) {
   const pathname = usePathname();
-  const { isAdmin, canSee, visibility, toggleTopic } = useVisibility();
 
-  if (!isAdmin && !canSee("minimax")) return null;
 
   const active = pathname.startsWith("/minimax");
-  const isVisible = visibility["minimax"] === true;
-  const dimmed = isAdmin && !isVisible;
 
   if (collapsed) {
     return (
@@ -934,7 +695,6 @@ function MinimaxLink({ collapsed }: { collapsed: boolean }) {
             active
               ? "bg-zinc-100 text-zinc-900 dark:bg-zinc-800 dark:text-zinc-50"
               : "text-zinc-600 hover:bg-zinc-50 hover:text-zinc-900 dark:text-zinc-400 dark:hover:bg-zinc-900",
-            dimmed ? "opacity-40" : "",
           ].join(" ")}
         >
           <Brain className="h-4 w-4" />
@@ -944,7 +704,7 @@ function MinimaxLink({ collapsed }: { collapsed: boolean }) {
   }
 
   return (
-    <div className={["mt-1 flex items-center gap-1", dimmed ? "opacity-50" : ""].join(" ")}>
+    <div className="mt-1 flex items-center gap-1">
       <Link
         href="/minimax"
         className={[
@@ -957,35 +717,16 @@ function MinimaxLink({ collapsed }: { collapsed: boolean }) {
         <Brain className="h-4 w-4 shrink-0" />
         <span className="flex-1">Minimax</span>
       </Link>
-      {isAdmin && (
-        <button
-          onClick={() => void toggleTopic("minimax", !isVisible)}
-          title={isVisible ? "Ocultar a estudiantes" : "Mostrar a estudiantes"}
-          aria-label={isVisible ? "Ocultar Minimax" : "Mostrar Minimax"}
-          className={[
-            "flex h-8 w-8 shrink-0 items-center justify-center rounded-md transition-colors",
-            isVisible
-              ? "text-emerald-600 hover:bg-emerald-50 dark:hover:bg-emerald-950/40"
-              : "text-zinc-400 hover:bg-zinc-100 dark:hover:bg-zinc-800",
-          ].join(" ")}
-        >
-          {isVisible ? <Eye className="h-4 w-4" /> : <EyeOff className="h-4 w-4" />}
-        </button>
-      )}
     </div>
   );
 }
 
-/** Link simple "Poda alfa-beta" (una página con pestañas). Gateado por `alfa-beta`. */
+/** Link simple "Poda alfa-beta" (una página con pestañas). */
 function AlfaBetaLink({ collapsed }: { collapsed: boolean }) {
   const pathname = usePathname();
-  const { isAdmin, canSee, visibility, toggleTopic } = useVisibility();
 
-  if (!isAdmin && !canSee("alfa-beta")) return null;
 
   const active = pathname.startsWith("/alfa-beta");
-  const isVisible = visibility["alfa-beta"] === true;
-  const dimmed = isAdmin && !isVisible;
 
   if (collapsed) {
     return (
@@ -998,7 +739,6 @@ function AlfaBetaLink({ collapsed }: { collapsed: boolean }) {
             active
               ? "bg-zinc-100 text-zinc-900 dark:bg-zinc-800 dark:text-zinc-50"
               : "text-zinc-600 hover:bg-zinc-50 hover:text-zinc-900 dark:text-zinc-400 dark:hover:bg-zinc-900",
-            dimmed ? "opacity-40" : "",
           ].join(" ")}
         >
           <Scissors className="h-4 w-4" />
@@ -1008,7 +748,7 @@ function AlfaBetaLink({ collapsed }: { collapsed: boolean }) {
   }
 
   return (
-    <div className={["mt-1 flex items-center gap-1", dimmed ? "opacity-50" : ""].join(" ")}>
+    <div className="mt-1 flex items-center gap-1">
       <Link
         href="/alfa-beta"
         className={[
@@ -1021,35 +761,16 @@ function AlfaBetaLink({ collapsed }: { collapsed: boolean }) {
         <Scissors className="h-4 w-4 shrink-0" />
         <span className="flex-1">Poda alfa-beta</span>
       </Link>
-      {isAdmin && (
-        <button
-          onClick={() => void toggleTopic("alfa-beta", !isVisible)}
-          title={isVisible ? "Ocultar a estudiantes" : "Mostrar a estudiantes"}
-          aria-label={isVisible ? "Ocultar Poda alfa-beta" : "Mostrar Poda alfa-beta"}
-          className={[
-            "flex h-8 w-8 shrink-0 items-center justify-center rounded-md transition-colors",
-            isVisible
-              ? "text-emerald-600 hover:bg-emerald-50 dark:hover:bg-emerald-950/40"
-              : "text-zinc-400 hover:bg-zinc-100 dark:hover:bg-zinc-800",
-          ].join(" ")}
-        >
-          {isVisible ? <Eye className="h-4 w-4" /> : <EyeOff className="h-4 w-4" />}
-        </button>
-      )}
     </div>
   );
 }
 
-/** Link simple "Aristas y muros" (una página con pestañas). Gateado por `aristas`. */
+/** Link simple "Aristas y muros" (una página con pestañas). */
 function AristasLink({ collapsed }: { collapsed: boolean }) {
   const pathname = usePathname();
-  const { isAdmin, canSee, visibility, toggleTopic } = useVisibility();
 
-  if (!isAdmin && !canSee("aristas")) return null;
 
   const active = pathname.startsWith("/aristas");
-  const isVisible = visibility["aristas"] === true;
-  const dimmed = isAdmin && !isVisible;
 
   if (collapsed) {
     return (
@@ -1062,7 +783,6 @@ function AristasLink({ collapsed }: { collapsed: boolean }) {
             active
               ? "bg-zinc-100 text-zinc-900 dark:bg-zinc-800 dark:text-zinc-50"
               : "text-zinc-600 hover:bg-zinc-50 hover:text-zinc-900 dark:text-zinc-400 dark:hover:bg-zinc-900",
-            dimmed ? "opacity-40" : "",
           ].join(" ")}
         >
           <Fence className="h-4 w-4" />
@@ -1072,7 +792,7 @@ function AristasLink({ collapsed }: { collapsed: boolean }) {
   }
 
   return (
-    <div className={["mt-1 flex items-center gap-1", dimmed ? "opacity-50" : ""].join(" ")}>
+    <div className="mt-1 flex items-center gap-1">
       <Link
         href="/aristas"
         className={[
@@ -1085,35 +805,16 @@ function AristasLink({ collapsed }: { collapsed: boolean }) {
         <Fence className="h-4 w-4 shrink-0" />
         <span className="flex-1">Aristas y muros</span>
       </Link>
-      {isAdmin && (
-        <button
-          onClick={() => void toggleTopic("aristas", !isVisible)}
-          title={isVisible ? "Ocultar a estudiantes" : "Mostrar a estudiantes"}
-          aria-label={isVisible ? "Ocultar Aristas y muros" : "Mostrar Aristas y muros"}
-          className={[
-            "flex h-8 w-8 shrink-0 items-center justify-center rounded-md transition-colors",
-            isVisible
-              ? "text-emerald-600 hover:bg-emerald-50 dark:hover:bg-emerald-950/40"
-              : "text-zinc-400 hover:bg-zinc-100 dark:hover:bg-zinc-800",
-          ].join(" ")}
-        >
-          {isVisible ? <Eye className="h-4 w-4" /> : <EyeOff className="h-4 w-4" />}
-        </button>
-      )}
     </div>
   );
 }
 
-/** Link simple "Visibilidad 2D" (una página con pestañas). Gateado por `visibilidad`. */
+/** Link simple "Visibilidad 2D" (una página con pestañas). */
 function VisibilidadLink({ collapsed }: { collapsed: boolean }) {
   const pathname = usePathname();
-  const { isAdmin, canSee, visibility, toggleTopic } = useVisibility();
 
-  if (!isAdmin && !canSee("visibilidad")) return null;
 
   const active = pathname.startsWith("/visibilidad");
-  const isVisible = visibility["visibilidad"] === true;
-  const dimmed = isAdmin && !isVisible;
 
   if (collapsed) {
     return (
@@ -1126,7 +827,6 @@ function VisibilidadLink({ collapsed }: { collapsed: boolean }) {
             active
               ? "bg-zinc-100 text-zinc-900 dark:bg-zinc-800 dark:text-zinc-50"
               : "text-zinc-600 hover:bg-zinc-50 hover:text-zinc-900 dark:text-zinc-400 dark:hover:bg-zinc-900",
-            dimmed ? "opacity-40" : "",
           ].join(" ")}
         >
           <Lightbulb className="h-4 w-4" />
@@ -1136,7 +836,7 @@ function VisibilidadLink({ collapsed }: { collapsed: boolean }) {
   }
 
   return (
-    <div className={["mt-1 flex items-center gap-1", dimmed ? "opacity-50" : ""].join(" ")}>
+    <div className="mt-1 flex items-center gap-1">
       <Link
         href="/visibilidad"
         className={[
@@ -1149,35 +849,16 @@ function VisibilidadLink({ collapsed }: { collapsed: boolean }) {
         <Lightbulb className="h-4 w-4 shrink-0" />
         <span className="flex-1">Visibilidad 2D</span>
       </Link>
-      {isAdmin && (
-        <button
-          onClick={() => void toggleTopic("visibilidad", !isVisible)}
-          title={isVisible ? "Ocultar a estudiantes" : "Mostrar a estudiantes"}
-          aria-label={isVisible ? "Ocultar Visibilidad 2D" : "Mostrar Visibilidad 2D"}
-          className={[
-            "flex h-8 w-8 shrink-0 items-center justify-center rounded-md transition-colors",
-            isVisible
-              ? "text-emerald-600 hover:bg-emerald-50 dark:hover:bg-emerald-950/40"
-              : "text-zinc-400 hover:bg-zinc-100 dark:hover:bg-zinc-800",
-          ].join(" ")}
-        >
-          {isVisible ? <Eye className="h-4 w-4" /> : <EyeOff className="h-4 w-4" />}
-        </button>
-      )}
     </div>
   );
 }
 
-/** Link simple "Tower Defense" (una página con pestañas). Gateado por `tower-defense`. */
+/** Link simple "Tower Defense" (una página con pestañas). */
 function TowerDefenseLink({ collapsed }: { collapsed: boolean }) {
   const pathname = usePathname();
-  const { isAdmin, canSee, visibility, toggleTopic } = useVisibility();
 
-  if (!isAdmin && !canSee("tower-defense")) return null;
 
   const active = pathname.startsWith("/tower-defense");
-  const isVisible = visibility["tower-defense"] === true;
-  const dimmed = isAdmin && !isVisible;
 
   if (collapsed) {
     return (
@@ -1190,7 +871,6 @@ function TowerDefenseLink({ collapsed }: { collapsed: boolean }) {
             active
               ? "bg-zinc-100 text-zinc-900 dark:bg-zinc-800 dark:text-zinc-50"
               : "text-zinc-600 hover:bg-zinc-50 hover:text-zinc-900 dark:text-zinc-400 dark:hover:bg-zinc-900",
-            dimmed ? "opacity-40" : "",
           ].join(" ")}
         >
           <Castle className="h-4 w-4" />
@@ -1200,7 +880,7 @@ function TowerDefenseLink({ collapsed }: { collapsed: boolean }) {
   }
 
   return (
-    <div className={["mt-1 flex items-center gap-1", dimmed ? "opacity-50" : ""].join(" ")}>
+    <div className="mt-1 flex items-center gap-1">
       <Link
         href="/tower-defense"
         className={[
@@ -1213,35 +893,16 @@ function TowerDefenseLink({ collapsed }: { collapsed: boolean }) {
         <Castle className="h-4 w-4 shrink-0" />
         <span className="flex-1">Tower Defense</span>
       </Link>
-      {isAdmin && (
-        <button
-          onClick={() => void toggleTopic("tower-defense", !isVisible)}
-          title={isVisible ? "Ocultar a estudiantes" : "Mostrar a estudiantes"}
-          aria-label={isVisible ? "Ocultar Tower Defense" : "Mostrar Tower Defense"}
-          className={[
-            "flex h-8 w-8 shrink-0 items-center justify-center rounded-md transition-colors",
-            isVisible
-              ? "text-emerald-600 hover:bg-emerald-50 dark:hover:bg-emerald-950/40"
-              : "text-zinc-400 hover:bg-zinc-100 dark:hover:bg-zinc-800",
-          ].join(" ")}
-        >
-          {isVisible ? <Eye className="h-4 w-4" /> : <EyeOff className="h-4 w-4" />}
-        </button>
-      )}
     </div>
   );
 }
 
-/** Link simple "Daño en juegos" (una página con pestañas). Gateado por `damage`. */
+/** Link simple "Daño en juegos" (una página con pestañas). */
 function DanoLink({ collapsed }: { collapsed: boolean }) {
   const pathname = usePathname();
-  const { isAdmin, canSee, visibility, toggleTopic } = useVisibility();
 
-  if (!isAdmin && !canSee("damage")) return null;
 
   const active = pathname.startsWith("/dano");
-  const isVisible = visibility["damage"] === true;
-  const dimmed = isAdmin && !isVisible;
 
   if (collapsed) {
     return (
@@ -1254,7 +915,6 @@ function DanoLink({ collapsed }: { collapsed: boolean }) {
             active
               ? "bg-zinc-100 text-zinc-900 dark:bg-zinc-800 dark:text-zinc-50"
               : "text-zinc-600 hover:bg-zinc-50 hover:text-zinc-900 dark:text-zinc-400 dark:hover:bg-zinc-900",
-            dimmed ? "opacity-40" : "",
           ].join(" ")}
         >
           <Dices className="h-4 w-4" />
@@ -1264,7 +924,7 @@ function DanoLink({ collapsed }: { collapsed: boolean }) {
   }
 
   return (
-    <div className={["mt-1 flex items-center gap-1", dimmed ? "opacity-50" : ""].join(" ")}>
+    <div className="mt-1 flex items-center gap-1">
       <Link
         href="/dano"
         className={[
@@ -1277,35 +937,16 @@ function DanoLink({ collapsed }: { collapsed: boolean }) {
         <Dices className="h-4 w-4 shrink-0" />
         <span className="flex-1">Daño en juegos</span>
       </Link>
-      {isAdmin && (
-        <button
-          onClick={() => void toggleTopic("damage", !isVisible)}
-          title={isVisible ? "Ocultar a estudiantes" : "Mostrar a estudiantes"}
-          aria-label={isVisible ? "Ocultar Daño en juegos" : "Mostrar Daño en juegos"}
-          className={[
-            "flex h-8 w-8 shrink-0 items-center justify-center rounded-md transition-colors",
-            isVisible
-              ? "text-emerald-600 hover:bg-emerald-50 dark:hover:bg-emerald-950/40"
-              : "text-zinc-400 hover:bg-zinc-100 dark:hover:bg-zinc-800",
-          ].join(" ")}
-        >
-          {isVisible ? <Eye className="h-4 w-4" /> : <EyeOff className="h-4 w-4" />}
-        </button>
-      )}
     </div>
   );
 }
 
-/** Link simple "Trazar líneas" (una página con pestañas). Gateado por `line-drawing`. */
+/** Link simple "Trazar líneas" (una página con pestañas). */
 function LineasLink({ collapsed }: { collapsed: boolean }) {
   const pathname = usePathname();
-  const { isAdmin, canSee, visibility, toggleTopic } = useVisibility();
 
-  if (!isAdmin && !canSee("line-drawing")) return null;
 
   const active = pathname.startsWith("/lineas");
-  const isVisible = visibility["line-drawing"] === true;
-  const dimmed = isAdmin && !isVisible;
 
   if (collapsed) {
     return (
@@ -1318,7 +959,6 @@ function LineasLink({ collapsed }: { collapsed: boolean }) {
             active
               ? "bg-zinc-100 text-zinc-900 dark:bg-zinc-800 dark:text-zinc-50"
               : "text-zinc-600 hover:bg-zinc-50 hover:text-zinc-900 dark:text-zinc-400 dark:hover:bg-zinc-900",
-            dimmed ? "opacity-40" : "",
           ].join(" ")}
         >
           <Spline className="h-4 w-4" />
@@ -1328,7 +968,7 @@ function LineasLink({ collapsed }: { collapsed: boolean }) {
   }
 
   return (
-    <div className={["mt-1 flex items-center gap-1", dimmed ? "opacity-50" : ""].join(" ")}>
+    <div className="mt-1 flex items-center gap-1">
       <Link
         href="/lineas"
         className={[
@@ -1341,35 +981,16 @@ function LineasLink({ collapsed }: { collapsed: boolean }) {
         <Spline className="h-4 w-4 shrink-0" />
         <span className="flex-1">Trazar líneas</span>
       </Link>
-      {isAdmin && (
-        <button
-          onClick={() => void toggleTopic("line-drawing", !isVisible)}
-          title={isVisible ? "Ocultar a estudiantes" : "Mostrar a estudiantes"}
-          aria-label={isVisible ? "Ocultar Trazar líneas" : "Mostrar Trazar líneas"}
-          className={[
-            "flex h-8 w-8 shrink-0 items-center justify-center rounded-md transition-colors",
-            isVisible
-              ? "text-emerald-600 hover:bg-emerald-50 dark:hover:bg-emerald-950/40"
-              : "text-zinc-400 hover:bg-zinc-100 dark:hover:bg-zinc-800",
-          ].join(" ")}
-        >
-          {isVisible ? <Eye className="h-4 w-4" /> : <EyeOff className="h-4 w-4" />}
-        </button>
-      )}
     </div>
   );
 }
 
-/** Link simple "Laberinto Pacman" (una página con pestañas). Gateado por `pacman`. */
+/** Link simple "Laberinto Pacman" (una página con pestañas). */
 function PacmanLink({ collapsed }: { collapsed: boolean }) {
   const pathname = usePathname();
-  const { isAdmin, canSee, visibility, toggleTopic } = useVisibility();
 
-  if (!isAdmin && !canSee("pacman")) return null;
 
   const active = pathname.startsWith("/pacman");
-  const isVisible = visibility["pacman"] === true;
-  const dimmed = isAdmin && !isVisible;
 
   if (collapsed) {
     return (
@@ -1382,7 +1003,6 @@ function PacmanLink({ collapsed }: { collapsed: boolean }) {
             active
               ? "bg-zinc-100 text-zinc-900 dark:bg-zinc-800 dark:text-zinc-50"
               : "text-zinc-600 hover:bg-zinc-50 hover:text-zinc-900 dark:text-zinc-400 dark:hover:bg-zinc-900",
-            dimmed ? "opacity-40" : "",
           ].join(" ")}
         >
           <Ghost className="h-4 w-4" />
@@ -1392,7 +1012,7 @@ function PacmanLink({ collapsed }: { collapsed: boolean }) {
   }
 
   return (
-    <div className={["mt-1 flex items-center gap-1", dimmed ? "opacity-50" : ""].join(" ")}>
+    <div className="mt-1 flex items-center gap-1">
       <Link
         href="/pacman"
         className={[
@@ -1405,21 +1025,6 @@ function PacmanLink({ collapsed }: { collapsed: boolean }) {
         <Ghost className="h-4 w-4 shrink-0" />
         <span className="flex-1">Laberinto Pacman</span>
       </Link>
-      {isAdmin && (
-        <button
-          onClick={() => void toggleTopic("pacman", !isVisible)}
-          title={isVisible ? "Ocultar a estudiantes" : "Mostrar a estudiantes"}
-          aria-label={isVisible ? "Ocultar Laberinto Pacman" : "Mostrar Laberinto Pacman"}
-          className={[
-            "flex h-8 w-8 shrink-0 items-center justify-center rounded-md transition-colors",
-            isVisible
-              ? "text-emerald-600 hover:bg-emerald-50 dark:hover:bg-emerald-950/40"
-              : "text-zinc-400 hover:bg-zinc-100 dark:hover:bg-zinc-800",
-          ].join(" ")}
-        >
-          {isVisible ? <Eye className="h-4 w-4" /> : <EyeOff className="h-4 w-4" />}
-        </button>
-      )}
     </div>
   );
 }

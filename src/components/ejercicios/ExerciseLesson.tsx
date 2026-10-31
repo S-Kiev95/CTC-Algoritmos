@@ -1,9 +1,8 @@
 "use client";
 
 import { useState, type ReactNode } from "react";
-import { BookText, Eye, EyeOff, Lightbulb, Code2, Play } from "lucide-react";
+import { BookText, Lightbulb, Code2, Play } from "lucide-react";
 import { ResizableTopicShell } from "@/components/ResizableTopicShell";
-import { useVisibility } from "@/components/VisibilityProvider";
 import type { Exercise } from "@/lib/ejercicios/exercises";
 
 /** Pestaña extra (siempre visible) que va ANTES de Enunciado, ej. Teoría/Demo. */
@@ -16,9 +15,7 @@ export type LeadingTab = {
 
 /**
  * Shell de una página de ejercicio. Tabs (opcionales) iniciales + Enunciado,
- * Pistas, Solución y (opcional) Animación. Solución y Animación solo se muestran
- * si la solución está habilitada (`canSee(exercise.solutionSlug)`); el
- * profe/admin las ve siempre, más un toggle para revelarlas a los estudiantes.
+ * Pistas, Solución y (opcional) Animación.
  */
 export function ExerciseLesson({
   exercise,
@@ -37,15 +34,9 @@ export function ExerciseLesson({
   animacion?: () => ReactNode;
   leadingTabs?: LeadingTab[];
 }) {
-  const { isAdmin, canSee, visibility, toggleTopic } = useVisibility();
   const [tab, setTab] = useState<string>(leadingTabs[0]?.id ?? "enunciado");
 
   const Icon = exercise.icon;
-  // ExerciseLesson se usa para ejercicios "problema" (con solución). Si faltara
-  // el slug, derivamos uno por convención para no romper tipos.
-  const solSlug = exercise.solutionSlug ?? `${exercise.visibilitySlug}:sol`;
-  const showSolution = isAdmin || canSee(solSlug);
-  const solutionVisible = visibility[solSlug] === true;
 
   const header = (
     <header className="border-b border-zinc-200 bg-white px-6 py-4 dark:border-zinc-800 dark:bg-zinc-950">
@@ -64,26 +55,6 @@ export function ExerciseLesson({
             {subtitle}
           </p>
         </div>
-        {/* Toggle de solución (solo profe) */}
-        {isAdmin && (
-          <button
-            onClick={() => void toggleTopic(solSlug, !solutionVisible)}
-            className={[
-              "flex shrink-0 items-center gap-1.5 rounded-md border px-2.5 py-1.5 text-xs font-medium transition-colors",
-              solutionVisible
-                ? "border-emerald-300 text-emerald-700 hover:bg-emerald-50 dark:border-emerald-700/50 dark:text-emerald-300 dark:hover:bg-emerald-950/40"
-                : "border-zinc-300 text-zinc-500 hover:bg-zinc-100 dark:border-zinc-700 dark:hover:bg-zinc-800",
-            ].join(" ")}
-            title="Mostrar/ocultar la solución a los estudiantes"
-          >
-            {solutionVisible ? (
-              <Eye className="h-3.5 w-3.5" />
-            ) : (
-              <EyeOff className="h-3.5 w-3.5" />
-            )}
-            Solución {solutionVisible ? "visible" : "oculta"}
-          </button>
-        )}
       </div>
 
       <div className="mt-4 flex flex-wrap items-center gap-3">
@@ -104,12 +75,10 @@ export function ExerciseLesson({
           <TabButton active={tab === "pistas"} onClick={() => setTab("pistas")} icon={<Lightbulb className="h-3.5 w-3.5" />}>
             Pistas
           </TabButton>
-          {showSolution && (
-            <TabButton active={tab === "solucion"} onClick={() => setTab("solucion")} icon={<Code2 className="h-3.5 w-3.5" />}>
-              Solución
-            </TabButton>
-          )}
-          {showSolution && animacion && (
+          <TabButton active={tab === "solucion"} onClick={() => setTab("solucion")} icon={<Code2 className="h-3.5 w-3.5" />}>
+            Solución
+          </TabButton>
+          {animacion && (
             <TabButton active={tab === "animacion"} onClick={() => setTab("animacion")} icon={<Play className="h-3.5 w-3.5" />}>
               Animación
             </TabButton>
@@ -119,24 +88,15 @@ export function ExerciseLesson({
     </header>
   );
 
-  // Si la solución está oculta y el usuario cae en una tab de solución, lo
-  // mandamos al enunciado.
-  const effectiveTab =
-    !showSolution && (tab === "solucion" || tab === "animacion")
-      ? "enunciado"
-      : tab;
-
-  const activeLeading = leadingTabs.find((lt) => lt.id === effectiveTab);
+  const activeLeading = leadingTabs.find((lt) => lt.id === tab);
 
   return (
     <ResizableTopicShell header={header}>
       {activeLeading && activeLeading.render()}
-      {effectiveTab === "enunciado" && <ReadingPane>{enunciado}</ReadingPane>}
-      {effectiveTab === "pistas" && <PistasPane pistas={pistas} />}
-      {effectiveTab === "solucion" && showSolution && (
-        <ReadingPane>{solucion}</ReadingPane>
-      )}
-      {effectiveTab === "animacion" && showSolution && animacion && animacion()}
+      {tab === "enunciado" && <ReadingPane>{enunciado}</ReadingPane>}
+      {tab === "pistas" && <PistasPane pistas={pistas} />}
+      {tab === "solucion" && <ReadingPane>{solucion}</ReadingPane>}
+      {tab === "animacion" && animacion && animacion()}
     </ResizableTopicShell>
   );
 }

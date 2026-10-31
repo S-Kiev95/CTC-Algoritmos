@@ -4,8 +4,6 @@ import { MapPin, type LucideIcon } from "lucide-react";
  * Ciudades para la sección de mapas. Cada ciudad define un bounding box chico
  * (zona céntrica) para que el grafo de calles sea manejable para animar.
  * `bbox` = [sur, oeste, norte, este] (orden de Overpass).
- *
- * Visibilidad: la sección entera con `mapas`; cada ciudad con `mapa:<slug>`.
  */
 export type City = {
   slug: string;
@@ -14,11 +12,8 @@ export type City = {
   icon: LucideIcon;
   /** [sur, oeste, norte, este]. */
   bbox: [number, number, number, number];
-  visibilitySlug: string;
   ready: boolean;
 };
-
-export const MAPS_SECTION_SLUG = "mapas";
 
 export const CITIES: City[] = [
   {
@@ -27,7 +22,6 @@ export const CITIES: City[] = [
     short: "Centro de Salto sobre el río Uruguay",
     icon: MapPin,
     bbox: [-31.392, -57.974, -31.38, -57.96],
-    visibilitySlug: "mapa:salto",
     ready: true,
   },
   {
@@ -36,7 +30,6 @@ export const CITIES: City[] = [
     short: "Microcentro porteño",
     icon: MapPin,
     bbox: [-34.611, -58.39, -34.599, -58.374],
-    visibilitySlug: "mapa:buenos-aires",
     ready: true,
   },
   {
@@ -45,7 +38,6 @@ export const CITIES: City[] = [
     short: "Midtown Manhattan",
     icon: MapPin,
     bbox: [40.752, -73.993, 40.764, -73.978],
-    visibilitySlug: "mapa:nueva-york",
     ready: true,
   },
   {
@@ -54,7 +46,6 @@ export const CITIES: City[] = [
     short: "Centro histórico",
     icon: MapPin,
     bbox: [41.884, 12.485, 41.896, 12.499],
-    visibilitySlug: "mapa:roma",
     ready: true,
   },
 ];
