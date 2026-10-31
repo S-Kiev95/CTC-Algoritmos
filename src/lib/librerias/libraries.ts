@@ -1,19 +1,15 @@
 import { LayoutDashboard, Server, Database, Gamepad2, type LucideIcon } from "lucide-react";
 
 /**
- * Librerías de utilidad (contenido de referencia). Visibilidad: la sección con
- * `librerias` y cada librería con `lib:<slug>`.
+ * Librerías de utilidad (contenido de referencia).
  */
 export type Library = {
   slug: string;
   title: string;
   short: string;
   icon: LucideIcon;
-  visibilitySlug: string;
   ready: boolean;
 };
-
-export const LIBRARIES_SECTION_SLUG = "librerias";
 
 export const LIBRARIES: Library[] = [
   {
@@ -21,7 +17,6 @@ export const LIBRARIES: Library[] = [
     title: "Streamlit",
     short: "Interfaces gráficas y dashboards solo con Python",
     icon: LayoutDashboard,
-    visibilitySlug: "lib:streamlit",
     ready: true,
   },
   {
@@ -29,7 +24,6 @@ export const LIBRARIES: Library[] = [
     title: "FastAPI",
     short: "APIs web rápidas con type hints y docs automáticas",
     icon: Server,
-    visibilitySlug: "lib:fastapi",
     ready: true,
   },
   {
@@ -37,7 +31,6 @@ export const LIBRARIES: Library[] = [
     title: "SQLModel",
     short: "Base de datos SQL con modelos Python (Pydantic + SQLAlchemy)",
     icon: Database,
-    visibilitySlug: "lib:sqlmodel",
     ready: true,
   },
   {
@@ -45,7 +38,6 @@ export const LIBRARIES: Library[] = [
     title: "Pygame",
     short: "Videojuegos 2D en Python: pantalla, bucle, sprites, sonido",
     icon: Gamepad2,
-    visibilitySlug: "lib:pygame",
     ready: true,
   },
 ];
